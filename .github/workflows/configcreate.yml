@@ -25,6 +25,5 @@ jobs:
       # Runs a single command using the runners shell
       - name: Create config.ini file
         run: |
-          ls,
           touch config.ini,
           echo "[CRONITORCONF]" >> config.ini
