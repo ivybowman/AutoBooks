@@ -24,6 +24,8 @@ The intention of this script is solely to automate downloading and converting of
 
 - Setup Guides Coming Soon
 
+To configure autobooks rename or make a copy of `autobooks_template.conf` and name it `autobooks.conf`
+
 # Credits
 
 - [odmpy by Ping](https://github.com/ping/odmpy/)
