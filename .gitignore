@@ -3,5 +3,7 @@
 *.log
 *.odm
 *.license
-config.ini
+autobooks_config.ini
+web_chromeprofile/
+web_edgeprofile/
 
