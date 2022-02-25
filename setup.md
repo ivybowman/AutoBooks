@@ -15,7 +15,7 @@ Open a PowerShell window then follow the steps below.
 `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 2. Run the Scoop installer, this is a package manager used to install some prerequisites.  
 `iwr -useb get.scoop.sh | iex`
-3. Install prerequisites. Note: Chromedriver requires Google Chrome to be installed.
+3. Install prerequisites. Note: Chromedriver requires Google Chrome to be installed.  
 `scoop install ffmpeg chromedriver git`
 
 ## macOS Setup Guide(Intel & M1)
@@ -24,7 +24,7 @@ Open a PowerShell window then follow the steps below.
 
 Open a terminal window then follow the steps below.
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
-2. Install Home Brew Be sure to follow instructions at the end for adding homebrew to path.
+2. Install Homebrew. Be sure to follow instructions at the end for adding it to path.
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3. Install prerequisites. On trying to use these tools you might see an unideditifed developer pop up, this is normal just open the folder and ctrl+click or right click on the file and click open.
 Note: Chromedriver requires Google Chrome to be installed.  
@@ -34,9 +34,9 @@ Note: Chromedriver requires Google Chrome to be installed.
 ## AutoBooks Install & Setup (All Operating Systems)
 
 ### AutoBooks Install 
-To install the latest version run the following command.
+To install the latest version run the following command.  
 `pip3 install git+https://git@github.com/ivybowman/autobooks.git --upgrade --force-reinstall`
-To uninstall AutoBooks run the following command.
+To uninstall AutoBooks run the following command.  
 `pip3 uninstall autobooks`
 
 ### AutoBooks Configuration
@@ -55,8 +55,8 @@ out_folder = #Folder where m4b files will be moved to.
 #To add more libraries just make a copy of the below section and increment the number. 
 [library_0]
 library_page = #Overdrive subdomain of your library. Ex: "examplepage" from "https://examplepage.overdrive.com/"
-library_select = false #If your library uses a dropdown box on sign in put the exact text here. If not put "false" Ex: "Example County Library"
-card_number = #Supply library card number here
-card_pin = #Supply library card pin here. If not used for sign in put "false"
+library_select = false #Library select box contents here. If not used for sign in put "false" Ex: "Example County Library"
+card_number = #Library card number here
+card_pin = #Library card pin here. If not used for sign in put "false"
 ```
 
