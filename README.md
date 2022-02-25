@@ -16,16 +16,20 @@ The intention of this script is solely to automate downloading and converting of
 - Reports execution status and some logs to a [Cronitor](https://cronitor.io/) monitor.
 - Can be controlled via Discord bot or console.
 
-# Requirements
+# Prerequisites
 
-- Tools: python, pip, git, ffmpeg, odmpy
-- Accounts: [Cronitor](https://cronitor.io/) For script monitoring
+- Tools: git, ffmpeg, odmpy, chromedriver (Installed in setup guide.)
+- Accounts: [Cronitor](https://cronitor.io/) For script monitoring, optional but will display errors if not setup.
 
 # Links
 
 - [Setup Guides(WorkInProgress)](setup.md)
 
-To configure autobooks browse to the AutoBooks folder located in your home directory or user folder and edit the autobooks.conf file, details are in the setup guide.
+# Usage
+
+- Run AutoBooks dl/fulfill: `autobooks`
+- Run AutoBooks Web: `autobooks-web`
+- Run the AutoBooks Discord bot: `autobooks-discord`
 
 # Credits
 

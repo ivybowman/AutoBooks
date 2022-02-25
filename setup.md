@@ -33,16 +33,22 @@ Note: Chromedriver requires Google Chrome to be installed.
 
 ## AutoBooks Install & Setup (All Operating Systems)
 
-### AutoBooks Install 
+### Installation 
 To install the latest version run the following command.  
 `pip3 install git+https://git@github.com/ivybowman/autobooks.git --upgrade --force-reinstall`
 To uninstall AutoBooks run the following command.  
 `pip3 uninstall autobooks`
 
-### AutoBooks Configuration
+### Configuration
 
 1. Open a terminal and run `autobooks` this will run setup commands to create the data folder.
-2. Open the `autobooks.conf` file located inside subfolder Autobooks of your user folder in a text editor. The options are explained below.  
+2. Edit the `autobooks.conf` file using one of the commands below or by browsing to the autobooks folder inside your home directory.
+- Windows(GUI) PowerShell: `notepad $env:USERPROFILE\AutoBooks\autobooks.conf`
+- Windows(GUI) Command Prompt: `notepad %userprofile%\AutoBooks\autobooks.conf`
+- macOS(GUI) Terminal: `open -a TextEdit ~/AutoBooks/autobooks.conf`
+- Linux or macOS(CLI): `nano ~/AutoBooks/autobooks.conf`
+
+### Config Options
 ``` 
 [DEFAULT]
 cronitor_name_main = AutoBooks #Name of monitor to use for Cronitor in the processing function
