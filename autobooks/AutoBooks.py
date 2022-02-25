@@ -40,7 +40,8 @@ good_odm_list=[]
 bad_odm_list=[]
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path=os.path.join(scriptdir, 'web_known_files.csv')
-#Check paths
+
+#Check paths, and if not found do first time setup
 if os.path.exists(scriptdir):
     os.chdir(scriptdir)
 else:
@@ -169,7 +170,6 @@ def download_loans(driver, df, name):
     library_list=[]
     id_list=[]
     title_list=[]
-
     books = driver.find_elements(By.XPATH , '//a[@tabindex="0"][@role="link"]')
     #Check if download buttons where found
     if len(books) == 0:
