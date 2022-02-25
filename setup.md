@@ -6,32 +6,20 @@ Python tool to automate processing a batch of OverDrive audiobooks.
 
 The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, in order for use with your prefered audiobook player during the loan period.
 
-## Windows Setup Guide
+## Windows 10 & 11 Setup Guide
 
 ### Install Programs
 
 1. Download and install the latest release of git from https://gitforwindows.org/ using the default settings.
 2. Download and install the latest release of python from https://www.python.org/downloads/ or the windows store.  
-Note: When installing python be sure to select add python to path.  
+Note: When installing python from the website be sure to select add python to path.  
 After installation open Windows Settings > Apps > Apps & features and turn off the two python app installer aliases.
-3. Download and install the latest release build of FFmpeg from https://github.com/GyanD/codexffmpeg/releases/ using the guide below
+3. Download and extract the latest release of FFmpeg from here https://github.com/GyanD/codexffmpeg/releases/
+4. Rename the extracted folder to ffmpeg and move it into the root of C: drive.
+5. Open an elevated command prompt window and run this command. `setx /m PATH "C:\ffmpeg\bin;%PATH%"`
 
-### FFmpeg on Windows Install Guide
 
-1. Download and extract the latest release of FFmpeg from here https://github.com/GyanD/codexffmpeg/releases/
-2. Rename the extracted folder to ffmpeg and move it into the root of C: drive.
-3. Open an elevated command prompt window and run this command. `setx /m PATH "C:\ffmpeg\bin;%PATH%"`
-
-### Install ODMPY
-
-1. First open a powershell or cmd window, and run the following commands to ensure validity  
-`python --version` `pip --version` `git --version` `ffmpeg -version`
-2. Open a powershell or cmd window and run `pip install git+https://git@github.com/ping/odmpy.git --upgrade --force-reinstall`
-3. Run 
-
-## macOS Setup Guide
-
-This guide works for both M1 and Intel based Macs.
+## macOS Setup Guide(Intel & M1)
 
 ### Install Programs
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
