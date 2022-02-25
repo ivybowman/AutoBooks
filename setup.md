@@ -46,7 +46,7 @@ This guide works for both M1 and Intel based Macs.
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
 2. Setup homebrew using the following command in your terminal. Be sure to follow instructions at the end for adding homebrew to path.
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-3. Run the following brew command to install some needed tools. Note: Chromedriver requires Google Chrome to be installed.
+3. Run the following command to install some needed tools. Note: Chromedriver requires Google Chrome to be installed.
 `brew install ffmpeg chromedriver`
 
 ### AutoBooks Install and Setup
@@ -68,10 +68,10 @@ discord_bot_token = #Optional for using the discord bot functionality.
 odm_folder = #Folder where your .odm files are located
 out_folder = 
 
-#To add more libraries just make a copy of the below section and increment the number. Example: "library_0" becomes "library_1".
+#To add more libraries just make a copy of the below section and increment the number. 
 [library_0]
-library_page = #Overdrive subdomain of your library. Ex: Use PAGE from "https://PAGE.overdrive.com/"
-library_select = false #If your library uses a dropdown box on the sign in put the exact text here. If not put "false"
+library_page = #Overdrive subdomain of your library. Ex: "examplepage" from "https://examplepage.overdrive.com/"
+library_select = false #If your library uses a dropdown box on the sign in put the exact text here. If not put "false" Ex: "Example County Library"
 card_number = #Supply library card number here
 card_pin = #Supply library card pin here. If not used for sign in put "false"
 ```
