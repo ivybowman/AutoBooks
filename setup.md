@@ -1,0 +1,44 @@
+# AutoBooks
+
+Python tool to automate processing a batch of OverDrive audiobooks.  
+
+# Important Disclaimer
+
+The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, in order for use with your prefered audiobook player during the loan period.
+
+## Windows Setup Guide
+
+### Install Programs
+
+1. Download and install the latest release of git from https://gitforwindows.org/ using the default settings.
+2. Download and install the latest release of python from https://www.python.org/downloads/ or the windows store.  
+Note: When installing python be sure to select add python to path.  
+After installation open Windows Settings > Apps > Apps & features and turn off the two python app installer aliases.
+3. Download and install the latest release build of FFmpeg from https://github.com/GyanD/codexffmpeg/releases/ using the guide below
+
+### FFmpeg on Windows Install Guide
+
+1. Extract the ffmpeg zip downloaded above.
+2. Rename the folder containing a few subfolders to "ffmpeg".
+3. Copy the "ffmpeg" folder to the root of your C drive.
+4. Type "path" into windows search and open "Edit the system environment variables".
+5. Click "Enviroment Variables" then double click on "Path".
+6. On the first blank line type or paste. `C:\ffmpeg\bin`
+7. Click Ok on the 3 open windows to save and close.
+
+### Install ODMPY
+
+1. First open a powershell or cmd window, and run the following commands to ensure validity  
+`python --version` `pip --version` `git --version` `ffmpeg -version`
+2. Open a powershell or cmd window and run `pip install git+https://git@github.com/ping/odmpy.git --upgrade --force-reinstall`
+3. Run 
+
+## Debian/Ubuntu Linux Setup Guide
+
+//todo
+
+# Credits
+
+- [odmpy by Ping](https://github.com/ping/odmpy/)
+- [StackOverflow](https://stackoverflow.com/) 
+- [Cronitor](https://cronitor.io/)
