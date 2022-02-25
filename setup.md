@@ -59,7 +59,7 @@ To uninstall AutoBooks run the following command.
 ## AutoBooks Configuration
 
 Open the `autobooks.conf` file located in your user folder in a text editor. The options are explained below
-``` json
+``` 
 [DEFAULT]
 cronitor_name_main = AutoBooks #Name of monitor to use for Cronitor in the processing function
 cronitor_name_web = AutoBooksWeb #Name of monitor to use for Cronitor in the web function.
