@@ -26,10 +26,15 @@ Open a terminal window then follow the steps below. Works with both M1 and Intel
 Note: Chromedriver requires Google Chrome to be installed.  
 `brew install ffmpeg chromedriver`
 
-## Linux Setup Guide
+## Debian/Ubuntu Linux Setup Guide
 
 Open a terminal window then follow the steps below.
-//TODO
+2. Update package list.  
+`sudo apt-get update`
+2. Install most prerequisites.  
+`sudo apt-get install -y unzip ffmpeg git`
+3. 
+
 
 
 ## AutoBooks Install & Setup (All Operating Systems)
