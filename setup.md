@@ -10,25 +10,28 @@ The intention of this script is solely to automate downloading and converting of
 
 ### Install Programs
 
-1. Download and install the latest release of git from https://gitforwindows.org/ using the default settings.
-2. Download and install the latest release of python from https://www.python.org/downloads/ or the windows store.  
-Note: When installing python from the website be sure to select add python to path.  
-After installation open Windows Settings > Apps > Apps & features and turn off the two python app installer aliases.
-3. Download and extract the latest release of FFmpeg from here https://github.com/GyanD/codexffmpeg/releases/
-4. Rename the extracted folder to ffmpeg and move it into the root of C: drive.
-5. Open an elevated command prompt window and run this command. `setx /m PATH "C:\ffmpeg\bin;%PATH%"`
-
+Open a PowerShell window then follow the steps below.
+1. Set execution policy to allow the Scoop installer to run.  
+`Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+2. Run the Scoop installer, this is a package manager used to install some prerequisites.  
+`iwr -useb get.scoop.sh | iex`
+3. Install prerequisites. Note: Chromedriver requires Google Chrome to be installed.
+`scoop install ffmpeg chromedriver git`
 
 ## macOS Setup Guide(Intel & M1)
 
 ### Install Programs
+
+Open a terminal window then follow the steps below.
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
-2. Setup homebrew using the following command in your terminal. Be sure to follow instructions at the end for adding homebrew to path.
+2. Install Home Brew Be sure to follow instructions at the end for adding homebrew to path.
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-3. Run the following command to install some needed tools. Note: Chromedriver requires Google Chrome to be installed.  
+3. Install prerequisites. On trying to use these tools you might see an unideditifed developer pop up, this is normal just open the folder and ctrl+click or right click on the file and click open.
+Note: Chromedriver requires Google Chrome to be installed.  
 `brew install ffmpeg chromedriver`
 
-## AutoBooks Manuel Install & Setup (All Operating Systems)
+
+## AutoBooks Install & Setup (All Operating Systems)
 
 ### AutoBooks Install 
 To install the latest version run the following command.
@@ -38,7 +41,8 @@ To uninstall AutoBooks run the following command.
 
 ### AutoBooks Configuration
 
-Open the `autobooks.conf` file located in your user folder in a text editor. The options are explained below
+1. Open a terminal and run `autobooks` this will run setup commands to create the data folder.
+2. Open the `autobooks.conf` file located inside subfolder Autobooks of your user folder in a text editor. The options are explained below.  
 ``` 
 [DEFAULT]
 cronitor_name_main = AutoBooks #Name of monitor to use for Cronitor in the processing function
