@@ -56,6 +56,25 @@ To uninstall AutoBooks run the following command.
 `pip3 uninstall autobooks`
 
 
+## AutoBooks Configuration
+
+Open the `autobooks.conf` file located in your user folder in a text editor. The options are explained below
+``` json
+[DEFAULT]
+cronitor_name_main = AutoBooks #Name of monitor to use for Cronitor in the processing function
+cronitor_name_web = AutoBooksWeb #Name of monitor to use for Cronitor in the web function.
+cronitor_apikey = #Apikey for Cronitor to send monitoring data.
+discord_bot_token = #Optional for using the discord bot functionality.
+odm_folder = #Folder where your .odm files are located
+out_folder = 
+
+#To add more libraries just make a copy of the below section and increment the number. Example: "library_0" becomes "library_1".
+[library_0]
+library_page = #Overdrive subdomain of your library. Ex: Use PAGE from "https://PAGE.overdrive.com/"
+library_select = false #If your library uses a dropdown box on the sign in put the exact text here. If not put "false"
+card_number = #Supply library card number here
+card_pin = #Supply library card pin here. If not used for sign in put "false"
+```
 
 
 # Credits

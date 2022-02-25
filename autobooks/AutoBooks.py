@@ -91,8 +91,8 @@ def process_books(odm_list):
     global error_count
     dl_logger.info('Begin processing booklist: %s', " ".join(odm_list))
     for x in odm_list:
-        #odmpy_args = ["odmpy", "dl", x]
-        odmpy_args = ["odmpy", "dl", "@" + os.path.join(scriptdir, "odmpydl.conf"), x]
+        odmpy_args = ["odmpy", "dl", x]
+        #odmpy_args = ["odmpy", "dl", "@" + os.path.join(scriptdir, "odmpydl.conf"), x]
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
@@ -116,7 +116,7 @@ def process_books(odm_list):
                 good_odm_list.append(x)
     dl_logger.info("Book Processing Finished")       
 #Function to cleanup in and out files. 
-def cleanup(m4bs, odms):
+def cleanup(m4bs, odms, odmfolder):
     global error_count
     #Move m4b files to outdir
     for x in m4bs:
@@ -125,7 +125,7 @@ def cleanup(m4bs, odms):
             dl_logger.error("Book %s already exists in outdir skipped", x) 
             error_count += 1
         else:
-            shutil.move(os.path.join(odmdir, x), os.path.join(outdir, x))
+            shutil.move(os.path.join(odmfolder, x), os.path.join(outdir, x))
             dl_logger.info("Moved book %s to outdir", x)
     #Backup sourcefiles 
     sourcefiles = odms + glob.glob("*.license")
@@ -139,7 +139,6 @@ def cleanup(m4bs, odms):
 
 #Function for sign in
 def sign_in(driver, name, cardno, pin, select):
-    #global driver
     global error_count
     web_logger.info("sign_in: Signing into library %s with card: %s",name,cardno)
     #Attempt select library from dropdown
@@ -185,12 +184,12 @@ def download_loans(driver, df, name):
             book_url = i.get_attribute('href') 
             book_info = i.get_attribute('aria-label')
             book_dl_url = book_url.replace('/media/', '/media/download/audiobook-mp3/')
-            book_id = ''.join(filter(str.isdigit, book_url))
+            book_id = int(''.join(filter(str.isdigit, book_url)))
             if "eBook." in book_info:
                 pass
             else:
                 try: 
-                    df.query(f"audiobook_id == {book_id}")
+                    df.query(f"book_id == {book_id}")
                     web_logger.info('download_loans: Skipped %s found in known books',str.strip(book_title))
                 except (NameError, AttributeError):
                     library_list.append(name)
@@ -200,6 +199,7 @@ def download_loans(driver, df, name):
                     driver.get(book_dl_url)
                     web_logger.info("download_loans: Downloaded book: %s", str.strip(book_title))
                     bookcount += 1
+            sleep(1)
 
         #Output book data to csv            
         df_out = pd.DataFrame({
@@ -238,7 +238,7 @@ def dl_run():
             process_books(odm_list)
             #Cleanup input and output files
             m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list)
+            cleanup(m4blist, good_odm_list, odmdir)
             #Process log file for Cronitor
             with open(LOG_FILENAME) as logs:
                 lines = logs.readlines()
@@ -298,7 +298,7 @@ def web_run():
             for line in lines:
                 if "AutoBooks.web" in line:
                     log_list.append(line)
-            web_monitor.ping(state='complete', message="".join(odmlist), metrics={'count': len(odmlist),'error_count': error_count})
+            monitor.ping(state='complete', message="".join(odmlist), metrics={'count': len(odmlist),'error_count': error_count})
 
         #Call Minimum DL functions
         if len(odmlist) != 0:
@@ -306,7 +306,7 @@ def web_run():
             monitor.ping(state='run', message='AutoBooks DL by IvyB Started from web Version:'+scriptver+'\n outdir:'+outdir+'\n logfile:'+LOG_FILENAME+'\n Found the following books \n'+" ".join(odmlist))
             process_books(odmlist)
             m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list)
+            cleanup(m4blist, good_odm_list, os.path.join(scriptdir, "web_downloads"))
             #Process log file for Cronitor
             with open(LOG_FILENAME) as logs:
                 lines = logs.readlines()
