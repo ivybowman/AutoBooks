@@ -304,10 +304,9 @@ def web_run():
         if len(odmlist) != 0:
             dl_logger.info("Started AutoBooks DL from web V.%s By:IvyB", scriptver)
             monitor.ping(state='run', message='AutoBooks DL by IvyB Started from web Version:'+scriptver+'\n outdir:'+outdir+'\n logfile:'+LOG_FILENAME+'\n Found the following books \n'+" ".join(odmlist))
-            
             process_books(odmlist)
             m4blist = glob.glob("*.m4b")
-            #cleanup(m4blist, good_odm_list)
+            cleanup(m4blist, good_odm_list)
             #Process log file for Cronitor
             with open(LOG_FILENAME) as logs:
                 lines = logs.readlines()
@@ -316,6 +315,5 @@ def web_run():
                     if any(term in line for term in ("Downloading", "expired", "generating", "merged")):
                         log_list.append(line)
                 #Send complete event and log to Cronitor
-                monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})        
-
+                monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})
 #web_run()
