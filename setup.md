@@ -35,7 +35,8 @@ After installation open Windows Settings > Apps > Apps & features and turn off t
 
 ## Debian/Ubuntu Linux Setup Guide
 
-//todo
+### Install Programs
+//TODO
 
 ## MacOS Setup Guide
 
