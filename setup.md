@@ -6,9 +6,7 @@ Python tool to automate processing a batch of OverDrive audiobooks.
 
 The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, in order for use with your prefered audiobook player during the loan period.
 
-## Windows 10 & 11 Setup Guide
-
-### Install Programs
+## Windows Setup Guide
 
 Open a PowerShell window then follow the steps below.
 1. Set execution policy to allow the Scoop installer to run.  
@@ -18,17 +16,20 @@ Open a PowerShell window then follow the steps below.
 3. Install prerequisites. Note: Chromedriver requires Google Chrome to be installed.  
 `scoop install ffmpeg chromedriver git`
 
-## macOS Setup Guide(Intel & M1)
+## macOS Setup Guide
 
-### Install Programs
-
-Open a terminal window then follow the steps below.
+Open a terminal window then follow the steps below. Works with both M1 and Intel Macs.
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
-2. Install Homebrew. Be sure to follow instructions at the end for adding it to path.
+2. Install Homebrew. Be sure to follow instructions at the end for adding it to path.  
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3. Install prerequisites. On trying to use these tools you might see an unideditifed developer pop up, this is normal just open the folder and ctrl+click or right click on the file and click open.
 Note: Chromedriver requires Google Chrome to be installed.  
 `brew install ffmpeg chromedriver`
+
+## Linux Setup Guide
+
+Open a terminal window then follow the steps below.
+//TODO
 
 
 ## AutoBooks Install & Setup (All Operating Systems)

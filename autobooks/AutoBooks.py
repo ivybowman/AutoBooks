@@ -71,8 +71,7 @@ logging.basicConfig(
     ]) 
 fh.setFormatter(RedactingFormatter(fh.formatter, patterns=["[34m[1m","[39m[22m", "[34m[22m", "[35m[22m"]))
 odmpy.logger = logging.getLogger('AutoBooks.odmpy')
-#main_logger = logging.getLogger("AutoBooks.main")
-dl_logger = logging.getLogger("AutoBooks.dl")
+process_logger = logging.getLogger("AutoBooks.main")
 web_logger = logging.getLogger("AutoBooks.web")
 discord_logger = logging.getLogger("AutoBooks.discord")
 
@@ -90,7 +89,7 @@ web_monitor = cronitor.Monitor(parser.get("DEFAULT","cronitor_name_web")) # Set 
 #Function to process the books.
 def process_books(odm_list):
     global error_count
-    dl_logger.info('Begin processing booklist: %s', " ".join(odm_list))
+    process_logger.info('Begin processing booklist: %s', " ".join(odm_list))
     for x in odm_list:
         odmpy_args = ["odmpy", "dl", x]
         #odmpy_args = ["odmpy", "dl", "@" + os.path.join(scriptdir, "odmpydl.conf"), x]
@@ -98,24 +97,24 @@ def process_books(odm_list):
             try:
                 odmpy.run()
             except FileNotFoundError:
-                dl_logger.error("Could not find odm file %s", x)
+                process_logger.error("Could not find odm file %s", x)
             except FileExistsError:
-                dl_logger.error("FileAlreadyExists, likely from m4b creation attempt")
+                process_logger.error("FileAlreadyExists, likely from m4b creation attempt")
             except SystemExit as e:
                 if e.code == 2:
-                    dl_logger.error("Invalid Arguments")
+                    process_logger.error("Invalid Arguments")
                 elif e.code == 1:
                     bad_odm_list.append(x)
                     try: 
                         os.remove("cover.jpg")   
                     except FileNotFoundError: 
-                        dl_logger.debug("Could not remove cover.jpg, moving on")
+                        process_logger.debug("Could not remove cover.jpg, moving on")
                     else: 
-                        dl_logger.debug("Removed cover.jpg to prep for next attempt")
+                        process_logger.debug("Removed cover.jpg to prep for next attempt")
                 error_count += 1
             else:
                 good_odm_list.append(x)
-    dl_logger.info("Book Processing Finished")       
+    process_logger.info("Book Processing Finished")       
 #Function to cleanup in and out files. 
 def cleanup(m4bs, odms, odmfolder):
     global error_count
@@ -123,20 +122,20 @@ def cleanup(m4bs, odms, odmfolder):
     for x in m4bs:
         exists = os.path.isfile(os.path.join(outdir + x))
         if exists: 
-            dl_logger.error("Book %s already exists in outdir skipped", x) 
+            process_logger.error("Book %s already exists in outdir skipped", x) 
             error_count += 1
         else:
             shutil.move(os.path.join(odmfolder, x), os.path.join(outdir, x))
-            dl_logger.info("Moved book %s to outdir", x)
+            process_logger.info("Moved book %s to outdir", x)
     #Backup sourcefiles 
     sourcefiles = odms + glob.glob("*.license")
     for x in sourcefiles:
         if os.path.isfile(os.path.join(scriptdir,"sourcefiles", x)):
-            dl_logger.error("File %s already exists in sourcefiles dir skipped", x) 
+            process_logger.error("File %s already exists in sourcefiles dir skipped", x) 
             error_count += 1
         else:
             shutil.move(x, os.path.join(scriptdir, "sourcefiles", x))
-            dl_logger.info("Moved file %s to sourcefiles", x)
+            process_logger.info("Moved file %s to sourcefiles", x)
 
 #Function for sign in
 def sign_in(driver, name, cardno, pin, select):
@@ -216,14 +215,14 @@ def download_loans(driver, df, name):
     return()
 
 
-def dl_run():
-    #AutoBooks dl or Fulfil
-    dl_logger.info("Started AutoBooks DL V.%s By:IvyB", scriptver)
+def main_run():
+    #AutoBooks
+    process_logger.info("Started AutoBooks V.%s By:IvyB", scriptver)
     #Try to change to ODM folder
     try:
         os.chdir(odmdir)
     except FileNotFoundError:
-        dl_logger.critical("The provided .odm dir was not found, exiting")
+        process_logger.critical("The provided .odm dir was not found, exiting")
         sys.exit(1)
     else:
         odm_list = glob.glob("*.odm")
@@ -232,7 +231,7 @@ def dl_run():
         #Check if any .odm files exist in odmdir
         if len(odm_list) == 0:
             monitor.ping(state='fail', message='Error: No .odm files found, exiting',metrics={'error_count': error_count})
-            dl_logger.critical("No .odm files found, exiting")
+            process_logger.critical("No .odm files found, exiting")
             sys.exit(1)
         else:
             process_books(odm_list)
@@ -302,7 +301,7 @@ def web_run():
 
         #Call Minimum DL functions
         if len(odmlist) != 0:
-            dl_logger.info("Started AutoBooks DL from web V.%s By:IvyB", scriptver)
+            process_logger.info("Started AutoBooks DL from web V.%s By:IvyB", scriptver)
             monitor.ping(state='run', message='AutoBooks DL by IvyB Started from web Version:'+scriptver+'\n outdir:'+outdir+'\n logfile:'+LOG_FILENAME+'\n Found the following books \n'+" ".join(odmlist))
             process_books(odmlist)
             m4blist = glob.glob("*.m4b")

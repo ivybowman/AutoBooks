@@ -8,13 +8,13 @@ The intention of this script is solely to automate downloading and converting of
 
 # Features
 
-- Uses selenium and chromedriver to download the odms from overdrive without user interaction. 
+- AutoBooks Web: Uses selenium and chromedriver to download the odms from overdrive without user interaction. 
 - Uses odmpy to fulfill and convert odms to chapterized m4b audiobook files.
 - Moves the generated audiobooks to a chosen folder.
 - Backs up the download files in case you need to redownload the books.
 - Logs to console and timestamped logfile.
 - Reports execution status and some logs to a [Cronitor](https://cronitor.io/) monitor.
-- Can be controlled via Discord bot or console.
+- Can be controlled via included Discord bot or terminal.
 
 # Prerequisites
 
@@ -23,18 +23,17 @@ The intention of this script is solely to automate downloading and converting of
 
 # Links
 
-- [Setup Guides(WorkInProgress)](setup.md)
+- [Setup Guides](setup.md)
 
 # Usage
 
-- Run AutoBooks dl/fulfill: `autobooks`
-- Run AutoBooks Web: `autobooks-web`
-- Run the AutoBooks Discord bot: `autobooks-discord`
+- AutoBooks DL/Fulfill: `autobooks`
+- AutoBooks Web: `autobooks-web`
+- AutoBooks Discord bot: `autobooks-discord`
 
 # Credits & Tools Used
 
 - [odmpy](https://github.com/ping/odmpy/) Simple console manager for OverDrive audiobook loans.
-- [StackOverflow](https://stackoverflow.com/) Answers to programming questions. 
 - [Cronitor](https://cronitor.io/) Simple monitoring for any application.
 - [Homebrew](https://brew.sh/) Package manager for macOS & Linux.
 - [Scoop](https://scoop.sh/) Package manager for Windows.
