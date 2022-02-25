@@ -269,7 +269,7 @@ def web_run():
         options.add_experimental_option('prefs', prefs)
         driver = webdriver.Chrome(options=options)
 
-        #Read known files csv for checking
+        #Attempt to read known files csv for checking books
         try:
             df = pd.read_csv(csv_path, sep=",")
         except FileNotFoundError:
@@ -318,6 +318,4 @@ def web_run():
                 #Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})        
 
-
-
-web_run()
+#web_run()
