@@ -37,6 +37,26 @@ After installation open Windows Settings > Apps > Apps & features and turn off t
 
 //todo
 
+## MacOS Setup Guide
+
+This guide works for both M1 and Intel based Macs.
+
+### Install Programs
+1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
+2. Setup homebrew using the following command in your terminal. Be sure to follow instructions at the end for adding homebrew to path.
+`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+3. Run the following brew command to install some needed tools. Note: Chromedriver requires Google Chrome to be installed.
+`brew install ffmpeg chromedriver`
+
+### AutoBooks Install and Setup
+To install the latest version run the following command.
+`pip3 install git+https://git@github.com/ivybowman/autobooks.git --upgrade --force-reinstall`
+To uninstall AutoBooks run the following command.
+`pip3 uninstall autobooks`
+
+
+
+
 # Credits
 
 - [odmpy by Ping](https://github.com/ping/odmpy/)
