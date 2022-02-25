@@ -31,8 +31,10 @@ The intention of this script is solely to automate downloading and converting of
 - Run AutoBooks Web: `autobooks-web`
 - Run the AutoBooks Discord bot: `autobooks-discord`
 
-# Credits
+# Credits & Tools Used
 
-- [odmpy](https://github.com/ping/odmpy/)
-- [StackOverflow](https://stackoverflow.com/) 
-- [Cronitor](https://cronitor.io/)
+- [odmpy](https://github.com/ping/odmpy/) Simple console manager for OverDrive audiobook loans.
+- [StackOverflow](https://stackoverflow.com/) Answers to programming questions. 
+- [Cronitor](https://cronitor.io/) Simple monitoring for any application.
+- [Homebrew](https://brew.sh/) Package manager for macOS & Linux.
+- [Scoop](https://scoop.sh/) Package manager for Windows.
