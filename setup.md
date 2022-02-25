@@ -25,10 +25,10 @@ After installation open Windows Settings > Apps > Apps & features and turn off t
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
 2. Setup homebrew using the following command in your terminal. Be sure to follow instructions at the end for adding homebrew to path.
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-3. Run the following command to install some needed tools. Note: Chromedriver requires Google Chrome to be installed.
+3. Run the following command to install some needed tools. Note: Chromedriver requires Google Chrome to be installed.  
 `brew install ffmpeg chromedriver`
 
-## AutoBooks Install & Setup (All Operating Systems)
+## AutoBooks Manuel Install & Setup (All Operating Systems)
 
 ### AutoBooks Install 
 To install the latest version run the following command.
