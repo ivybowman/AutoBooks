@@ -9,7 +9,7 @@ The intention of this script is solely to automate downloading and converting of
 # Features
 
 - Uses selenium and chromedriver to download the odms from overdrive without user interaction. 
-- Uses odmpy to fuffil and convert odms to chapterized m4b audiobook files.
+- Uses odmpy to fulfill and convert odms to chapterized m4b audiobook files.
 - Moves the generated audiobooks to a chosen folder.
 - Backs up the download files in case you need to redownload the books.
 - Logs to console and timestamped logfile.
