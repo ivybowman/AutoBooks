@@ -103,16 +103,13 @@ def process_books(odm_list):
             except FileExistsError:
                 process_logger.error("FileAlreadyExists, likely from m4b creation attempt")
             except SystemExit as e:
-                if e.code == 2:
-                    process_logger.error("Invalid Arguments")
-                elif e.code == 1:
-                    bad_odm_list.append(x)
-                    try: 
-                        os.remove("cover.jpg")   
-                    except FileNotFoundError: 
-                        process_logger.debug("Could not remove cover.jpg, moving on")
-                    else: 
-                        process_logger.debug("Removed cover.jpg to prep for next attempt")
+                bad_odm_list.append(x)
+                try: 
+                    os.remove("cover.jpg")   
+                except FileNotFoundError: 
+                    process_logger.debug("Could not remove cover.jpg, moving on")
+                else: 
+                    process_logger.debug("Removed cover.jpg to prep for next attempt")
                 error_count += 1
             else:
                 good_odm_list.append(x)
@@ -321,5 +318,5 @@ def web_run():
                         log_list.append(line)
                 #Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})
-if parser.get('DEFAULT' , "test_run") == "true":
+if __name__ == "__main__" and parser.get('DEFAULT' , "test_run") == "true":
     web_run()

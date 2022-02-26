@@ -10,7 +10,7 @@ import glob
 import sys
 import shutil
 import AutoBooks 
-
+import pandas
 
 #Log Settings
 #DISCORD_LOGFILE = os.path.join(AutoBooks.scriptdir,'log','AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Discord.log'.format(datetime.now()))
