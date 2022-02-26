@@ -91,8 +91,10 @@ def process_books(odm_list):
     global error_count
     process_logger.info('Begin processing booklist: %s', " ".join(odm_list))
     for x in odm_list:
-        odmpy_args = ["odmpy", "dl", x]
-        #odmpy_args = ["odmpy", "dl", "@" + os.path.join(scriptdir, "odmpydl.conf"), x]
+        if parser.get('DEFAULT' , "odmpy_args_test"):
+            odmpy_args = ["odmpy", "dl", x]
+        else:
+            odmpy_args = ["odmpy", "dl", "@" + os.path.join(scriptdir, "odmpydl.conf"), x]
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
@@ -319,4 +321,4 @@ def web_run():
                         log_list.append(line)
                 #Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})
-web_run()
+#web_run()
