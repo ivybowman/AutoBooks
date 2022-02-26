@@ -10,7 +10,7 @@ import glob
 import sys
 import shutil
 import AutoBooks 
-import pandas
+import pandas as pd
 
 #Log Settings
 #DISCORD_LOGFILE = os.path.join(AutoBooks.scriptdir,'log','AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Discord.log'.format(datetime.now()))
@@ -60,6 +60,24 @@ async def hello(ctx):
    print(max_file)
    await ctx.channel.send("Fetched latest AutoBooks logfile: \n"+ max_file)
    await ctx.channel.send(file=discord.File(max_file))
+
+
+@bot.command(name='csv')
+async def hello(ctx):
+   df = pd.read_csv(AutoBooks.csv_path, sep=",")
+
+   print(df)
+   await ctx.channel.send("Fetched latest AutoBooks logfile: \n")
+
+   embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
+   embedVar.add_field(name="Field1", value=df, inline=False)
+   embedVar.add_field(name="Field2", value="hi2", inline=False)
+   await ctx.channel.send(embed=embedVar)
+
+   #await ctx.channel.send(file=discord.File(max_file))
+
+
+
 def discord_run():
    if token == "":
       AutoBooks.discord_logger.critical("Bot token not found in config file, exiting.")
