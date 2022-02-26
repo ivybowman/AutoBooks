@@ -284,7 +284,7 @@ def web_run():
             sleep(3)
             #Check signed in status and either sign in or move on
             if "/account/ozone/sign-in" in driver.current_url:
-                sign_in(driver, library_page, parser.get('library_'+str(i), "card_number"), parser.get('library_'+str(i), "card_pin"), parser.get('library_'+str(i), "select"))
+                sign_in(driver, library_page, parser.get('library_'+str(i), "card_number"), parser.get('library_'+str(i), "card_pin"), parser.get('library_'+str(i), "library_select"))
             download_loans(driver, df, library_page)
             sleep(2)
         driver.close()
