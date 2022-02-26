@@ -33,10 +33,10 @@ Open a terminal window then follow the steps below.
 `sudo apt-get update`
 2. Install most prerequisites.  
 `sudo apt-get install -y unzip ffmpeg git`
-3. Run script to install 
+3. Run script to install the other prerequisites. Note: Chrome is required for AutoBooksWeb.
 With Google Chrome: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ivybowman/AutoBooks/main/ubuntusetupchrome.sh)"`
 Without Google Chrome: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ivybowman/AutoBooks/main/ubuntusetup.sh)"`
-Note: AutoBooks Web is not compatible with WSL, and requires X11 forwarding to run via ssh in it's current form. 
+Note: AutoBooks Web is not compatible with WSL, and requires X11 forwarding to run via ssh if headless mode is disabled. 
 
 
 ## AutoBooks Install & Setup (All Operating Systems)
@@ -63,6 +63,8 @@ cronitor_name_main = AutoBooks #Name of monitor to use for Cronitor in the proce
 cronitor_name_web = AutoBooksWeb #Name of monitor to use for Cronitor in the web function.
 cronitor_apikey = #Apikey for Cronitor to send monitoring data.
 discord_bot_token = #Optional for using the discord bot functionality.
+test_args = false #Picks args for odmpy, true disables merging into m4b files 
+test_run = false #Picks whether to enable a function call used for testing. Do not use with the autobooks-web command.
 odm_folder = #Folder where your .odm files are located.
 out_folder = #Folder where m4b files will be moved to.
 

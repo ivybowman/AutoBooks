@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '0.1.0' 
+VERSION = '0.2.0' 
 DESCRIPTION = 'Python tool to automate processing a batch of OverDrive audiobooks.'
 LONG_DESCRIPTION = 'Python tool to automate processing a batch of OverDrive audiobooks.'
 
