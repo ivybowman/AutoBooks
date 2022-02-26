@@ -265,9 +265,10 @@ def web_run():
         "download.directory_upgrade": True
         }
         options.add_argument('user-data-dir=' + os.path.join(scriptdir, "chrome_profile"))
-        #Testing headless mode
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
+        #Headless mode
+        if parser.get('DEFAULT' , "web_headless"):
+            options.add_argument('--headless')
+            options.add_argument('--disable-gpu')
         options.add_experimental_option('prefs', prefs)
         driver = webdriver.Chrome(options=options)
 
@@ -318,4 +319,4 @@ def web_run():
                         log_list.append(line)
                 #Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})
-#web_run()
+web_run()
