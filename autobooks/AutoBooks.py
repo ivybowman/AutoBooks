@@ -91,7 +91,7 @@ def process_books(odm_list):
     global error_count
     process_logger.info('Begin processing booklist: %s', " ".join(odm_list))
     for x in odm_list:
-        if parser.get('DEFAULT' , "odmpy_args_test"):
+        if parser.get('DEFAULT' , "test_mode") == "true":
             odmpy_args = ["odmpy", "dl", x]
         else:
             odmpy_args = ["odmpy", "dl", "@" + os.path.join(scriptdir, "odmpydl.conf"), x]
@@ -268,7 +268,7 @@ def web_run():
         }
         options.add_argument('user-data-dir=' + os.path.join(scriptdir, "chrome_profile"))
         #Headless mode
-        if parser.get('DEFAULT' , "web_headless"):
+        if parser.get('DEFAULT' , "web_headless") == "true":
             options.add_argument('--headless')
             options.add_argument('--disable-gpu')
         options.add_experimental_option('prefs', prefs)
@@ -321,4 +321,5 @@ def web_run():
                         log_list.append(line)
                 #Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list), metrics={'count': len(odmlist),'error_count': error_count})
-#web_run()
+if parser.get('DEFAULT' , "test_mode") == "true":
+    web_run()
