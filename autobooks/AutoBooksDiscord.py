@@ -13,15 +13,15 @@ import AutoBooks
 
 
 #Log Settings
-DISCORD_LOGFILE = os.path.join(AutoBooks.scriptdir,'log','AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Discord.log'.format(datetime.now()))
-formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s', datefmt='%I:%M:%S %p',)
-discord_fh = logging.FileHandler(DISCORD_LOGFILE)
-discord_fh.setFormatter(formatter)
-AutoBooks.discord_logger.removeHandler(AutoBooks.fh)
-AutoBooks.discord_logger.addHandler(discord_fh)
+#DISCORD_LOGFILE = os.path.join(AutoBooks.scriptdir,'log','AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Discord.log'.format(datetime.now()))
+#formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s', datefmt='%I:%M:%S %p',)
+#discord_fh = logging.FileHandler(DISCORD_LOGFILE)
+#discord_fh.setFormatter(formatter)
+#AutoBooks.discord_logger.removeHandler(AutoBooks.fh)
+#AutoBooks.discord_logger.addHandler(discord_fh)
 logger = logging.getLogger('discord')
-logger.removeHandler(AutoBooks.fh)
-logger.addHandler(discord_fh)
+#logger.removeHandler(AutoBooks.fh)
+#logger.addHandler(discord_fh)
 #Bot Settings
 try:
    token = AutoBooks.parser.get("DEFAULT", "discord_bot_token")
@@ -41,18 +41,22 @@ async def hello(ctx):
    await ctx.channel.send(embed=embedVar)
    AutoBooks.web_run()
 
-@bot.command(name='dl')
+@bot.command(name='main')
 async def hello(ctx):
    embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
    embedVar.add_field(name="Field1", value="hi", inline=False)
    embedVar.add_field(name="Field2", value="hi2", inline=False)
    await ctx.channel.send(embed=embedVar)
-   AutoBooks.dl_run()
+   AutoBooks.main_run()
 
 @bot.command(name='log')
 async def hello(ctx):
    files = glob.glob(os.path.join(AutoBooks.scriptdir, "log","*-Main.log"))
-   max_file = max(files, key=os.path.getctime)
+
+   files2 = sorted(files, key=os.path.getmtime, reverse=True) 
+   print(files2[0])
+
+   max_file = max(files, key=os.path.getmtime)
    print(max_file)
    await ctx.channel.send("Fetched latest AutoBooks logfile: \n"+ max_file)
    await ctx.channel.send(file=discord.File(max_file))
