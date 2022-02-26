@@ -34,6 +34,7 @@ Open a terminal window then follow the steps below.
 2. Install most prerequisites.  
 `sudo apt-get install -y unzip ffmpeg git`
 3. 
+`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ivybowman/AutoBooks/main/ubuntusetup.sh)"`
 
 
 

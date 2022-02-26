@@ -16,7 +16,7 @@ setup(
         packages=["autobooks"],
         entry_points={
         "console_scripts": [
-            "autobooks = autobooks.AutoBooks:dl-run",
+            "autobooks = autobooks.AutoBooks:main-run",
             "autobooks-web = autobooks.AutoBooks:web-run",
             "autobooks-discord = autobooks.AutoBooksDiscord:run"
         ]
