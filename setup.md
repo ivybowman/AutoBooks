@@ -28,14 +28,14 @@ Note: Chromedriver requires Google Chrome to be installed.
 
 ## Debian/Ubuntu Linux Setup Guide
 
-Open a terminal window then follow the steps below.
+Open a terminal window then follow the steps below. 
 2. Update package list.  
 `sudo apt-get update`
 2. Install most prerequisites.  
 `sudo apt-get install -y unzip ffmpeg git`
 3. 
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ivybowman/AutoBooks/main/ubuntusetup.sh)"`
-
+Note: AutoBooks Web is not compatible with WSL, and requires X11 forwarding to run via ssh in it's current form. 
 
 
 ## AutoBooks Install & Setup (All Operating Systems)
