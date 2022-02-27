@@ -9,7 +9,9 @@ import logging
 import glob
 import sys
 import shutil
-import AutoBooks
+
+from numpy import column_stack
+from AutoBooks import web_run, main_run, scriptdir, parser, csv_path, fh, discord_logger
 import pandas as pd
 
 # Log Settings
@@ -20,25 +22,25 @@ import pandas as pd
 # AutoBooks.discord_logger.removeHandler(AutoBooks.fh)
 # AutoBooks.discord_logger.addHandler(discord_fh)
 logger = logging.getLogger('discord')
-# logger.removeHandler(AutoBooks.fh)
+logger.removeHandler(fh)
 # logger.addHandler(discord_fh)
 # Bot Settings
 try:
-    token = AutoBooks.parser.get("DEFAULT", "discord_bot_token")
+    token = parser.get("DEFAULT", "discord_bot_token")
 except KeyError:
-    AutoBooks.discord_logger.critical("Bot token not found in config file, exiting.")
+    discord_logger.critical("Bot token not found in config file, exiting.")
 bot = commands.Bot(command_prefix='?')
 
 
 @bot.event
 async def on_ready():
-    AutoBooks.discord_logger.info(f'{bot.user} has connected to Discord!')
+    discord_logger.info(f'{bot.user} has connected to Discord!')
 
 
 @bot.command(name='web')
 async def hello(ctx):
     await ctx.channel.send("Starting AutoBooks Web. This may take awhile.")
-    AutoBooks.web_run()
+    web_run()
     embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
     embedVar.add_field(name="Field1", value="hi", inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
@@ -51,12 +53,12 @@ async def hello(ctx):
     embedVar.add_field(name="Field1", value="hi", inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
     await ctx.channel.send(embed=embedVar)
-    AutoBooks.main_run()
+    main_run()
 
 
 @bot.command(name='log')
 async def hello(ctx):
-    files = glob.glob(os.path.join(AutoBooks.scriptdir, "log", "*-Main.log"))
+    files = glob.glob(os.path.join(scriptdir, "log", "*-Main.log"))
 
     files2 = sorted(files, key=os.path.getmtime, reverse=True)
     print(files2[0])
@@ -69,13 +71,12 @@ async def hello(ctx):
 
 @bot.command(name='csv')
 async def hello(ctx):
-    df = pd.read_csv(AutoBooks.csv_path, sep=",")
+    df = pd.read_csv(csv_path, sep=",")
 
     print(df)
-    await ctx.channel.send("Fetched latest AutoBooks logfile: \n")
-
+    await ctx.channel.send("Fetched AutoBooks Known Books Database")
     embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
-    embedVar.add_field(name="Field1", value=df, inline=False)
+    embedVar.add_field(name="Field1", value=df['audiobook_info'], inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
     await ctx.channel.send(embed=embedVar)
 
@@ -84,7 +85,8 @@ async def hello(ctx):
 
 def discord_run():
     if token == "":
-        AutoBooks.discord_logger.critical("Bot token not found in config file, exiting.")
+        pass
+        #AutoBooks.discord_logger.critical("Bot token not found in config file, exiting.")
     else:
         bot.run(token)
 

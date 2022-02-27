@@ -65,6 +65,7 @@ cronitor_apikey = #Apikey for Cronitor to send monitoring data.
 discord_bot_token = #Optional for using the discord bot functionality.
 test_args = false #Picks args for odmpy, true disables merging into m4b files 
 test_run = false #Picks whether to enable a function call used for testing. Do not use with the autobooks-web command.
+web_headless = true #Pickks whether to run chrome in headless mode. Required for ssh support without X11 forwarding.
 odm_folder = #Folder where your .odm files are located.
 out_folder = #Folder where m4b files will be moved to.
 
