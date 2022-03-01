@@ -40,6 +40,7 @@ scriptver = "0.2.0"  # Version number of script
 error_count = 0
 good_odm_list = []
 bad_odm_list = []
+log_list = []
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(scriptdir, 'web_known_files.csv')
 
@@ -331,13 +332,14 @@ def web_run():
             # Process log file for Cronitor
             with open(LOG_FILENAME) as logs:
                 lines = logs.readlines()
-                log_list = []
+                #log_list = []
                 for line in lines:
                     if any(term in line for term in ("Downloading", "expired", "generating", "merged")):
                         log_list.append(line)
                 # Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list),
                              metrics={'count': len(odmlist), 'error_count': error_count})
+    return["".join(log_list), odmlist, error_count]
 
 
 if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "true":

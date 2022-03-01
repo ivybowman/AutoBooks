@@ -9,9 +9,10 @@ import logging
 import glob
 import sys
 import shutil
+import platform
 
 from numpy import column_stack
-from AutoBooks import web_run, main_run, scriptdir, parser, csv_path, fh, discord_logger
+from AutoBooks import web_run, main_run, scriptver, scriptdir, parser, csv_path, fh, discord_logger, LOG_FILENAME
 import pandas as pd
 
 # Log Settings
@@ -39,18 +40,27 @@ async def on_ready():
 
 @bot.command(name='web')
 async def hello(ctx):
-    await ctx.channel.send("Starting AutoBooks Web. This may take awhile....")
-    web_run()
-    embedVar = discord.Embed(title="Complete!", description="Desc", color=0x00ff00)
-    embedVar.add_field(name="Field1", value="hi", inline=False)
-    embedVar.add_field(name="Field2", value="hi2", inline=False)
-    embedVar.image("https://raw.githubusercontent.com/ivybowman/AutoBooks/70d9f0086274a1a50d964d7f5a24544371741950/img/logo_pink.png")
-    await ctx.channel.send(embed=embedVar)
+    embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....", description="Version: "+scriptver+" \nLogfile: "+LOG_FILENAME, color=0xFFAFCC)
+    embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo_pink_crop.png")
+    #embed_start.set_footer(text="OS: "+ platform.platform()+" Host: "+platform.node())
+    await ctx.channel.send(embed=embed_start)
+    web_info = web_run()
+    print(web_info)
+    embed_end = discord.Embed(title="AutoBooks Web Finished", description="See log info below for details.", color=0xFFAFCC)
+    embed_end.set_thumbnail(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/icon_pink.png")
+    embed_end.add_field(name="Variables", value="ODM List: "+str(web_info[1])+"\n ErrorCount: "+str(web_info[2]), inline=False)
+    embed_end.add_field(name="Logs", value=str(web_info[0]), inline=False)
+    
+    await ctx.channel.send(embed=embed_end)
+    files = glob.glob(os.path.join(scriptdir, "log", "*-Main.log"))
+    files2 = sorted(files, key=os.path.getmtime, reverse=True)
+    print(files2[0])
+    await ctx.channel.send(file=discord.File(files2[0]))
 
 
 @bot.command(name='main')
 async def hello(ctx):
-    embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
+    embedVar = discord.Embed(title="Title", description="Desc", color=0xFFAFCC)
     embedVar.add_field(name="Field1", value="hi", inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
    
@@ -61,7 +71,6 @@ async def hello(ctx):
 @bot.command(name='log')
 async def hello(ctx):
     files = glob.glob(os.path.join(scriptdir, "log", "*-Main.log"))
-
     files2 = sorted(files, key=os.path.getmtime, reverse=True)
     print(files2[0])
 
@@ -75,9 +84,8 @@ async def hello(ctx):
 async def hello(ctx):
     try:
         df = pd.read_csv(csv_path, sep=",")
-        #await ctx.channel.send("Fetched AutoBooks Known Books Database")
-        embedVar = discord.Embed(title="Autobooks Known Books", description=df['audiobook_title'].to_string(index=False), color=0x00ff00)
-        embedVar.image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/70d9f0086274a1a50d964d7f5a24544371741950/img/logo_pink_crop.png")
+        embedVar = discord.Embed(title="Autobooks Known Books", description=df['audiobook_title'].to_string(index=False), color=0xFFAFCC)
+        embedVar.set_footer(text="OS: "+ platform.platform()+" Host: "+os.uname())
         await ctx.channel.send(embed=embedVar)
     except FileNotFoundError:
         await ctx.channel.send("Known Books CSV not found.")
@@ -87,8 +95,7 @@ async def hello(ctx):
 
 def discord_run():
     if token == "":
-        pass
-        #AutoBooks.discord_logger.critical("Bot token not found in config file, exiting.")
+        discord_logger.critical("Bot token not found in config file, exiting.")
     else:
         bot.run(token)
 
