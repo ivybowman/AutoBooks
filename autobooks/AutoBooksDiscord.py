@@ -44,7 +44,7 @@ async def hello(ctx):
     embedVar = discord.Embed(title="Complete!", description="Desc", color=0x00ff00)
     embedVar.add_field(name="Field1", value="hi", inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
-    embedVar.image()
+    embedVar.image("https://raw.githubusercontent.com/ivybowman/AutoBooks/70d9f0086274a1a50d964d7f5a24544371741950/img/logo_pink.png")
     await ctx.channel.send(embed=embedVar)
 
 
@@ -53,6 +53,7 @@ async def hello(ctx):
     embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
     embedVar.add_field(name="Field1", value="hi", inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
+   
     await ctx.channel.send(embed=embedVar)
     main_run()
 
@@ -76,6 +77,7 @@ async def hello(ctx):
         df = pd.read_csv(csv_path, sep=",")
         #await ctx.channel.send("Fetched AutoBooks Known Books Database")
         embedVar = discord.Embed(title="Autobooks Known Books", description=df['audiobook_title'].to_string(index=False), color=0x00ff00)
+        embedVar.image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/70d9f0086274a1a50d964d7f5a24544371741950/img/logo_pink_crop.png")
         await ctx.channel.send(embed=embedVar)
     except FileNotFoundError:
         await ctx.channel.send("Known Books CSV not found.")
