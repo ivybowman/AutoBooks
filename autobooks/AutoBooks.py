@@ -201,7 +201,7 @@ def download_loans(driver, df, name):
                 except (NameError, AttributeError):
                     library_list.append(name)
                     id_list.append(book_id)
-                    title_list.append(book_info)
+                    title_list.append(str.strip(book_title))
                     # Download book
                     driver.get(book_dl_url)
                     web_logger.info("download_loans: Downloaded book: %s", str.strip(book_title))
@@ -212,7 +212,7 @@ def download_loans(driver, df, name):
         df_out = pd.DataFrame({
             'library_name': library_list,
             'book_id': id_list,
-            'audiobook_info': title_list
+            'audiobook_title': title_list
         })
         if os.path.exists(csv_path):
             df_out.to_csv(csv_path, mode='a', index=False, header=False)

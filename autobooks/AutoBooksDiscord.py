@@ -39,11 +39,12 @@ async def on_ready():
 
 @bot.command(name='web')
 async def hello(ctx):
-    await ctx.channel.send("Starting AutoBooks Web. This may take awhile.")
+    await ctx.channel.send("Starting AutoBooks Web. This may take awhile....")
     web_run()
-    embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
+    embedVar = discord.Embed(title="Complete!", description="Desc", color=0x00ff00)
     embedVar.add_field(name="Field1", value="hi", inline=False)
     embedVar.add_field(name="Field2", value="hi2", inline=False)
+    embedVar.image()
     await ctx.channel.send(embed=embedVar)
 
 
@@ -71,14 +72,13 @@ async def hello(ctx):
 
 @bot.command(name='csv')
 async def hello(ctx):
-    df = pd.read_csv(csv_path, sep=",")
-
-    print(df)
-    await ctx.channel.send("Fetched AutoBooks Known Books Database")
-    embedVar = discord.Embed(title="Title", description="Desc", color=0x00ff00)
-    embedVar.add_field(name="Field1", value=df['audiobook_info'], inline=False)
-    embedVar.add_field(name="Field2", value="hi2", inline=False)
-    await ctx.channel.send(embed=embedVar)
+    try:
+        df = pd.read_csv(csv_path, sep=",")
+        #await ctx.channel.send("Fetched AutoBooks Known Books Database")
+        embedVar = discord.Embed(title="Autobooks Known Books", description=df['audiobook_title'].to_string(index=False), color=0x00ff00)
+        await ctx.channel.send(embed=embedVar)
+    except FileNotFoundError:
+        await ctx.channel.send("Known Books CSV not found.")
 
     # await ctx.channel.send(file=discord.File(max_file))
 
