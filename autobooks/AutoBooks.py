@@ -41,6 +41,9 @@ error_count = 0
 good_odm_list = []
 bad_odm_list = []
 log_list = []
+library_list = []
+id_list = []
+title_list = []
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(scriptdir, 'web_known_files.csv')
 
@@ -175,9 +178,7 @@ def sign_in(driver, name, cardno, pin, select):
 # Function to download loans from OverDrive page
 def download_loans(driver, df, name):
     global error_count
-    library_list = []
-    id_list = []
-    title_list = []
+    
     books = driver.find_elements(By.XPATH, '//a[@tabindex="0"][@role="link"]')
     # Check if download buttons where found
     if len(books) == 0:
@@ -209,16 +210,7 @@ def download_loans(driver, df, name):
                     bookcount += 1
             sleep(1)
 
-        # Output book data to csv
-        df_out = pd.DataFrame({
-            'library_name': library_list,
-            'book_id': id_list,
-            'audiobook_title': title_list
-        })
-        if os.path.exists(csv_path):
-            df_out.to_csv(csv_path, mode='a', index=False, header=False)
-        else:
-            df_out.to_csv(csv_path, mode='w', index=False, header=True)
+       
         sleep(1)
         web_logger.info("download_loans: Finished downloading %s books from library %s", bookcount, name)
     return ()
@@ -293,7 +285,7 @@ def web_run():
         except FileNotFoundError:
             df = False
 
-        os.chdir("web_downloads")
+        os.chdir(os.path.join(scriptdir,"web_downloads"))
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, len(parser.sections())):
             library_page = parser.get('library_' + str(i), "library_page")
@@ -307,6 +299,16 @@ def web_run():
                         parser.get('library_' + str(i), "card_pin"), parser.get('library_' + str(i), "library_select"))
             download_loans(driver, df, library_page)
             sleep(2)
+             # Output book data to csv
+        df_out = pd.DataFrame({
+        'library_name': library_list,
+        'book_id': id_list,
+        'audiobook_title': title_list
+        })
+        if os.path.exists(csv_path):
+            df_out.to_csv(csv_path, mode='a', index=False, header=False)
+        else:
+            df_out.to_csv(csv_path, mode='w', index=False, header=True)
         driver.close()
         web_logger.info("AutoBooksWeb Complete")
         odmlist = glob.glob("*.odm")
@@ -339,7 +341,7 @@ def web_run():
                 # Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list),
                              metrics={'count': len(odmlist), 'error_count': error_count})
-    return["".join(log_list), odmlist, error_count]
+    return["\n".join(title_list), error_count]
 
 
 if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "true":

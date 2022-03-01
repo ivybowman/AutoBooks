@@ -40,18 +40,20 @@ async def on_ready():
 
 @bot.command(name='web')
 async def hello(ctx):
+    #Starting embed and running web
     embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....", description="Version: "+scriptver+" \nLogfile: "+LOG_FILENAME, color=0xFFAFCC)
     embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo_pink_crop.png")
-    #embed_start.set_footer(text="OS: "+ platform.platform()+" Host: "+platform.node())
+    embed_start.set_footer(text="OS: "+ platform.platform()+" Host: "+platform.node())
     await ctx.channel.send(embed=embed_start)
     web_info = web_run()
-    print(web_info)
-    embed_end = discord.Embed(title="AutoBooks Web Finished", description="See log info below for details.", color=0xFFAFCC)
+
+    #Ending Embed
+    embed_end = discord.Embed(title="AutoBooks Web Finished", description="See log info below for details. ErrorCount: "+str(web_info[1]), color=0xFFAFCC)
     embed_end.set_thumbnail(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/icon_pink.png")
-    embed_end.add_field(name="Variables", value="ODM List: "+str(web_info[1])+"\n ErrorCount: "+str(web_info[2]), inline=False)
-    embed_end.add_field(name="Logs", value=str(web_info[0]), inline=False)
-    
+    if web_info[0] != "":
+        embed_end.add_field(name="Book List", value=str(web_info[0]), inline=False)
     await ctx.channel.send(embed=embed_end)
+    #Logfile fetching
     files = glob.glob(os.path.join(scriptdir, "log", "*-Main.log"))
     files2 = sorted(files, key=os.path.getmtime, reverse=True)
     print(files2[0])
