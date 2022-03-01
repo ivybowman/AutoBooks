@@ -40,7 +40,7 @@ async def on_ready():
 async def hello(ctx):
     #Starting embed and running web
     embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....", description="Version: "+scriptver+" \nLogfile: "+LOG_FILENAME, color=0xFFAFCC)
-    embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo_pink_crop.png")
+    embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png")
     embed_start.set_footer(text="OS: "+ platform.platform()+" Host: "+platform.node())
     await ctx.channel.send(embed=embed_start)
     web_info = web_run()
