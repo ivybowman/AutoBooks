@@ -10,8 +10,6 @@ import glob
 import sys
 import shutil
 import platform
-
-from numpy import column_stack
 from AutoBooks import web_run, main_run, scriptver, scriptdir, parser, csv_path, fh, discord_logger, LOG_FILENAME
 import pandas as pd
 
