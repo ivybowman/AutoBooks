@@ -1,6 +1,7 @@
 
-<img align="center" src="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png">
-
+<p align="center">
+    <img src="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png">
+</p>
 Python tool to automate processing a batch of OverDrive audiobooks. 
 
 # Important Disclaimer
