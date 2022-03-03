@@ -1,4 +1,5 @@
-# AutoBooks
+![AutoBooksLogo](https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png)
+
 
 Python tool to automate processing a batch of OverDrive audiobooks. 
 
