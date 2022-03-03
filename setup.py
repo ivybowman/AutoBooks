@@ -21,7 +21,7 @@ setup(
             "autobooks-discord = autobooks.AutoBooksDiscord:run"
         ]
     },
-        install_requires=['odmpy @ git+https://git@github.com/ping/odmpy.git', "cronitor", "pandas", "discord.py", "selenium"],
+        install_requires=['odmpy @ git+https://git@github.com/ping/odmpy.git', "cronitor", "pandas", "discord.py", "selenium", "requests"],
         include_package_data=True,
         platforms="any",
         keywords=['python', 'AutoBooks'],
