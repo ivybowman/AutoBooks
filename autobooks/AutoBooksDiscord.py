@@ -71,9 +71,6 @@ async def hello(ctx):
 @bot.command(name='log')
 async def hello(ctx):
     files = glob.glob(os.path.join(scriptdir, "log", "*-Main.log"))
-    files2 = sorted(files, key=os.path.getmtime, reverse=True)
-    print(files2[0])
-
     max_file = max(files, key=os.path.getmtime)
     print(max_file)
     await ctx.channel.send("Fetched latest AutoBooks logfile: \n" + max_file)
