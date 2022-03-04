@@ -22,8 +22,8 @@ import requests
 # Set Vars
 scriptver = "0.2.1"  # Version number of script
 error_count = 0
-good_odm_list, bad_odm_list, log_list, library_list, book_id_list, book_title_list, book_odm_list = ([
-] for i in range(7))
+good_odm_list, bad_odm_list, library_list, book_id_list, book_title_list, book_odm_list = ([
+] for i in range(6))
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(scriptdir, 'web_known_files.csv')
 
