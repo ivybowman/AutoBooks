@@ -49,14 +49,16 @@ else:
 
 # Logging Config
 LOG_FILENAME = os.path.join(
-    scriptdir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Main.log'.format(datetime.now()))
+    scriptdir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d-%Y}.log'.format(datetime.now()))
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
+cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
 file_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {extra[scrubbed]}\n{exception}"
 redacting_formatter = RedactingFormatter(patterns=[
                                          "[34m[1m", "[39m[22m", "[34m[22m", "[35m[22m"], source_fmt=file_log_format)
 logger.configure(handlers=[
     {'sink': sys.stderr, "format": console_log_format},
-    {'sink': LOG_FILENAME, "format": redacting_formatter.format}
+    {'sink': LOG_FILENAME, "format": redacting_formatter.format},
+    #{'sink': process_logfile(), "format": cronitor_log_format.format}
 ])
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
@@ -301,7 +303,7 @@ def web_run():
         monitor.ping(state='complete', message="".join(odmlist),
                      metrics={'count': len(odmlist), 'error_count': error_count})
 
-        # Call Minimum DL functions
+        # Call DL to process files from web
         if len(odmlist) != 0:
             logger.info("Started AutoBooks V.{} By:IvyB", scriptver)
             monitor.ping(state='run',

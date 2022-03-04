@@ -35,7 +35,6 @@ class InterceptHandler(logging.Handler):
         )
 # Process log file for Cronitor
 def process_logfile(LOG_FILENAME, terms=None):
-    
     with open(LOG_FILENAME) as logs:
         lines = logs.readlines()
         log_list = []

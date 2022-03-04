@@ -5,7 +5,6 @@ from discord.ext import commands
 from pathlib import Path
 import os
 import discord
-import logging
 import glob
 import sys
 import shutil
@@ -62,7 +61,7 @@ async def hello(ctx):
 
 @bot.command(name='log')
 async def hello(ctx):
-    files = glob.glob(os.path.join(scriptdir, "log", "*-Main.log"))
+    files = glob.glob(os.path.join(scriptdir, "log", "*.log"))
     max_file = max(files, key=os.path.getmtime)
     print(max_file)
     await ctx.channel.send("Fetched latest AutoBooks logfile: \n" + max_file)
