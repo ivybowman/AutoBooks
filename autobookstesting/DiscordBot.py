@@ -10,30 +10,21 @@ import glob
 import sys
 import shutil
 import platform
-from AutoBooks import web_run, main_run, scriptver, scriptdir, parser, csv_path, fh, discord_logger, LOG_FILENAME
+from AutoBooks import web_run, main_run, scriptver, scriptdir, parser, csv_path, LOG_FILENAME, logger
 import pandas as pd
 
-# Log Settings
-# DISCORD_LOGFILE = os.path.join(AutoBooks.scriptdir,'log','AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Discord.log'.format(datetime.now()))
-# formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s', datefmt='%I:%M:%S %p',)
-# discord_fh = logging.FileHandler(DISCORD_LOGFILE)
-# discord_fh.setFormatter(formatter)
-# AutoBooks.discord_logger.removeHandler(AutoBooks.fh)
-# AutoBooks.discord_logger.addHandler(discord_fh)
-logger = logging.getLogger('discord')
-logger.removeHandler(fh)
-# logger.addHandler(discord_fh)
+
 # Bot Settings
 try:
     token = parser.get("DEFAULT", "discord_bot_token")
 except KeyError:
-    discord_logger.critical("Bot token not found in config file, exiting.")
+    logger.critical("Bot token not found in config file, exiting.")
 bot = commands.Bot(command_prefix='?')
 
 
 @bot.event
 async def on_ready():
-    discord_logger.info(f'{bot.user} has connected to Discord!')
+    logger.info(f'{bot.user} has connected to Discord!')
 
 
 @bot.command(name='web')
@@ -92,7 +83,7 @@ async def hello(ctx):
 
 def discord_run():
     if token == "":
-        discord_logger.critical("Bot token not found in config file, exiting.")
+        logger.critical("Bot token not found in config file, exiting.")
     else:
         bot.run(token)
 
