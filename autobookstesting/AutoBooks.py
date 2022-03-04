@@ -51,7 +51,7 @@ else:
     sys.exit(1)
 
 # Logging Config
-LOG_FILENAME = os.path.join(scriptdir, 'log', 'AutoBooks-{:%H-%M-$S_%m-%d-%Y}-Main.log'.format(datetime.now()))
+LOG_FILENAME = os.path.join(scriptdir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d-%Y}-Main.log'.format(datetime.now()))
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
 file_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {extra[scrubbed]}\n{exception}"
 redacting_formatter = RedactingFormatter(patterns=["[34m[1m", "[39m[22m", "[34m[22m", "[35m[22m"], source_fmt=file_log_format)
@@ -132,7 +132,7 @@ def cleanup(m4bs, odms, odmfolder):
 # Function for login
 def web_login(driver, name, cardno, pin, select):
     global error_count
-    logger.info("web_login: Logging into library: {}", name)
+    logger.info("Logging into library: {}", name)
     # Attempt selecting library from dropdown
     if select != "false":
         select_box = driver.find_element(By.XPATH, '//input[@id="signin-options"]')
@@ -143,7 +143,7 @@ def web_login(driver, name, cardno, pin, select):
     try:
         driver.find_element(By.ID, "username").send_keys(cardno)
     except selenium.common.exceptions.NoSuchElementException:
-        logger.critical("web_login: Can't find card number field skipped library {}", )
+        logger.critical("Can't find card number field skipped library {}", )
         error_count += 1
     # Attempt sending pin Note:Some pages don't have pin input
     if pin != "false":
@@ -162,7 +162,7 @@ def web_dl(driver, df, name):
         error_count += 1
         return ()
     else:
-        logger.info("web_dl: Begin DL from library: {} ", name)
+        logger.info("Begin DL from library: {} ", name)
         bookcount = 0
         for i in books:
             #Fetch info about the book
@@ -174,11 +174,11 @@ def web_dl(driver, df, name):
             book_title = book_info_split[0]
             if "Audiobook." in book_info:
                 if str(book_id) in df['book_id'].to_string():
-                    logger.info('web_dl: Skipped {} found in known books', book_title)
+                    logger.info('Skipped {} found in known books', book_title)
                 else:
                     # Download book
                     driver.get(book_dl_url)
-                    logger.info("web_dl: Downloaded book: {}", book_title)
+                    logger.info("Downloaded book: {}", book_title)
                     book_odm = max(glob.glob("*.odm"), key=os.path.getmtime)
                     bookcount += 1
 
@@ -191,7 +191,7 @@ def web_dl(driver, df, name):
 
        
         sleep(1)
-        logger.info("web_dl: Finished downloading {} books from library {}", bookcount, name)
+        logger.info("Finished downloading {} books from library {}", bookcount, name)
     return ()
 
 def main_run():
