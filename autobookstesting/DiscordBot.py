@@ -80,7 +80,6 @@ async def hello(ctx):
         await ctx.channel.send("Known Books CSV not found.")
     # await ctx.channel.send(file=discord.File(max_file))
 
-
 def discord_run():
     if token == "":
         logger.critical("Bot token not found in config file, exiting.")
