@@ -17,7 +17,7 @@ import pandas as pd
 try:
     token = parser.get("DEFAULT", "discord_bot_token")
 except KeyError:
-    logger.critical("Bot token not found in config file, exiting.")
+    logger.critical("Bot token field not found in config file, exiting.")
 bot = commands.Bot(command_prefix='?')
 
 
