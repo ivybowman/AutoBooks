@@ -78,7 +78,6 @@ async def hello(ctx):
         await ctx.channel.send(embed=embedVar)
     except FileNotFoundError:
         await ctx.channel.send("Known Books CSV not found.")
-
     # await ctx.channel.send(file=discord.File(max_file))
 
 

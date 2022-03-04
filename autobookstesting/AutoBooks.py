@@ -61,7 +61,7 @@ parser.read(os.path.join(scriptdir, "autobooks.conf"))
 odmdir = parser.get("DEFAULT",
                     "odm_folder")
 outdir = parser.get("DEFAULT", "out_folder")
-
+library_count = len(parser.sections())
 # Cronitor Setup https://cronitor.io/
 cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")
 monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_main"))
@@ -179,8 +179,6 @@ def web_dl(driver, df, name):
                     book_title_list.append(book_title)
                     book_odm_list.append(book_odm)
             sleep(1)
-
-       
         sleep(1)
         logger.info("Finished downloading {} books from library {}", bookcount, name)
     return ()
@@ -212,9 +210,9 @@ def main_run():
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, odmdir)
             #Fetch log messages
-            process_logfile(LOG_FILENAME, terms=("Downloading", "expired", "generating", "merged", "saved"))
+            logstr = process_logfile(LOG_FILENAME, terms=("Downloading", "expired", "generating", "merged", "saved"))
             # Send complete event and log to Cronitor
-            monitor.ping(state='complete', message="".join(log_list),
+            monitor.ping(state='complete', message=logstr,
                         metrics={'count': len(odm_list), 'error_count': error_count})
 
 
@@ -225,9 +223,11 @@ def web_run():
         sys.exit(1)
     else:
         logger.info("Started AutoBooks Web V.{} By:IvyB", scriptver)
+        #monitor.ping(state='run',
+                     #message='AutoBooks Web by IvyB Version:' + scriptver + '\n logfile:' + LOG_FILENAME + '\n LibraryCount: ' + str(
+                        # len(parser.sections())))
         monitor.ping(state='run',
-                     message='AutoBooks Web by IvyB Version:' + scriptver + '\n logfile:' + LOG_FILENAME + '\n LibraryCount: ' + str(
-                         len(parser.sections())))
+            message=f'AutoBooks Web by IvyB Version: {scriptver} \n logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}')
         # Configure WebDriver options
         options = Options()
         prefs = {
@@ -282,34 +282,23 @@ def web_run():
         odmlist = glob.glob("*.odm")
 
         # Process log file for Cronitor.
-        with open(LOG_FILENAME) as logs:
-            lines = logs.readlines()
-            log_list = []
-            for line in lines:
-                if "AutoBooks.web" in line:
-                    log_list.append(line)
-            monitor.ping(state='complete', message="".join(odmlist),
-                         metrics={'count': len(odmlist), 'error_count': error_count})
-
+        process_logfile(LOG_FILENAME, terms=("web"))
+        monitor.ping(state='complete', message="".join(odmlist),
+                    metrics={'count': len(odmlist), 'error_count': error_count})
+        
         # Call Minimum DL functions
         if len(odmlist) != 0:
             logger.info("Started AutoBooks V.{} By:IvyB", scriptver)
             monitor.ping(state='run',
-                         message='AutoBooks by IvyB Started from web Version:' + scriptver + '\n outdir:' + outdir + '\n logfile:' + LOG_FILENAME + '\n Found the following books \n' + " ".join(
-                             odmlist))
+                         message=f'AutoBooks by IvyB Started from web V.{scriptver} \n outdir:{outdir}\n logfile:{LOG_FILENAME}\n odmlist: \n{" ".join(odmlist)}')
             process_books(odmlist)
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, os.path.join(scriptdir, "web_downloads"))
             # Process log file for Cronitor
-            with open(LOG_FILENAME) as logs:
-                lines = logs.readlines()
-                log_list = []
-                for line in lines:
-                    if any(term in line for term in ("Downloading", "expired", "generating", "merged")):
-                        log_list.append(line)
-                # Send complete event and log to Cronitor
-                monitor.ping(state='complete', message="".join(log_list),
-                             metrics={'count': len(odmlist), 'error_count': error_count})
+            logstr = process_logfile(LOG_FILENAME, terms=("Downloading", "expired", "generating", "merged"))
+            # Send complete event and log to Cronitor
+            monitor.ping(state='complete', message=logstr,
+                            metrics={'count': len(odmlist), 'error_count': error_count})
         #return["\n".join(title_list), error_count]
 
 
