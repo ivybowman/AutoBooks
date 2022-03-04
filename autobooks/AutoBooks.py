@@ -35,16 +35,16 @@ class RedactingFormatter(object):
         return getattr(self.orig_formatter, attr)
 
 
-# Set Vars needed for config
-scriptver = "0.2.0"  # Version number of script
+# Set Vars
+scriptver = "0.2.1"  # Version number of script
 error_count = 0
 good_odm_list = []
 bad_odm_list = []
 log_list = []
 library_list = []
-id_list = []
-title_list = []
-info_list = []
+book_id_list = []
+book_title_list = []
+book_odm_list = []
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(scriptdir, 'web_known_files.csv')
 
@@ -149,11 +149,11 @@ def cleanup(m4bs, odms, odmfolder):
             process_logger.info("Moved file %s to sourcefiles", x)
 
 
-# Function for sign in
-def sign_in(driver, name, cardno, pin, select):
+# Function for login
+def web_login(driver, name, cardno, pin, select):
     global error_count
-    web_logger.info("sign_in: Signing into %s with card: %s", name, cardno)
-    # Attempt select library from dropdown
+    web_logger.info("web_login: Logging into %s", name)
+    # Attempt selecting library from dropdown
     if select != "false":
         select_box = driver.find_element(By.XPATH, '//input[@id="signin-options"]')
         webdriver.ActionChains(driver).move_to_element(select_box).click().send_keys(select).perform()
@@ -163,55 +163,56 @@ def sign_in(driver, name, cardno, pin, select):
     try:
         driver.find_element(By.ID, "username").send_keys(cardno)
     except selenium.common.exceptions.NoSuchElementException:
-        web_logger.critical("sign_in: Can't find card number field skipped library %s", )
+        web_logger.critical("web_login: Can't find card number field skipped library %s", )
         error_count += 1
     # Attempt sending pin Note:Some pages don't have pin input
     if pin != "false":
-        try:
-            driver.find_element(By.ID, "password").send_keys(pin)
-        except selenium.common.exceptions.NoSuchElementException:
-            web_logger.info("sign_in: Pin field not found")
+        driver.find_element(By.ID, "password").send_keys(pin)
     driver.find_element(By.CSS_SELECTOR, "button.signin-button.button.secondary").click()
-    web_logger.info("sign_in: Signed into library %s", name)
     sleep(5)
 
 
 # Function to download loans from OverDrive page
-def download_loans(driver, df, name):
+def web_dl(driver, df, name):
     global error_count
-    
+    #Gather all book title elements and check if any found
     books = driver.find_elements(By.XPATH, '//a[@tabindex="0"][@role="link"]')
-    # Check if download buttons where found
     if len(books) == 0:
-        web_logger.warning("Can't find download button skipped library %s", name)
+        web_logger.warning("Can't find books skipped library %s", name)
         error_count += 1
         return ()
     else:
-        web_logger.info("download_loans: Begin downloading from library %s", name)
+        web_logger.info("web_dl: Begin DL from %s", name)
         bookcount = 0
         for i in books:
-            book_title = format(i.get_attribute('innerHTML'))
+            #Fetch info about the book
             book_url = i.get_attribute('href')
             book_info = i.get_attribute('aria-label')
+            book_info_split = book_info.split(". Audiobook. Expires in")
             book_dl_url = book_url.replace('/media/', '/media/download/audiobook-mp3/')
             book_id = int(''.join(filter(str.isdigit, book_url)))
+            book_title = book_info_split[0]
             if "Audiobook." in book_info:
-                
                 if str(book_id) in df['book_id'].to_string():
-                    web_logger.info('download_loans: Skipped %s found in known books', str.strip(book_title))
+                    web_logger.info('web_dl: Skipped %s found in known books', book_title)
                 else:
-                    library_list.append(name)
-                    id_list.append(book_id)
-                    title_list.append(str.strip(book_title))
+                    
                     # Download book
                     driver.get(book_dl_url)
-                    web_logger.info("download_loans: Downloaded book: %s", str.strip(book_title))
+                    web_logger.info("web_dl: Downloaded book: %s", book_title)
+                    book_odm = max(glob.glob("*.odm"), key=os.path.getmtime)
+
+                    #Add book data to vars
                     bookcount += 1
+                    library_list.append(name)
+                    book_id_list.append(book_id)
+                    book_title_list.append(book_title)
+                    book_odm_list.append(book_odm)
             sleep(1)
 
        
         sleep(1)
-        web_logger.info("download_loans: Finished downloading %s books from library %s", bookcount, name)
+        web_logger.info("web_dl: Finished downloading %s books from library %s", bookcount, name)
     return ()
 
 def main_run():
@@ -282,26 +283,28 @@ def web_run():
             df = pd.read_csv(csv_path, sep=",")
         except FileNotFoundError:
             df = False
-
         os.chdir(os.path.join(scriptdir,"web_downloads"))
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, len(parser.sections())):
-            library_page = parser.get('library_' + str(i), "library_page")
-            web_logger.info("Started library %s", library_page)
-            url = "https://" + library_page + ".overdrive.com/"
+            library_index = 'library_' + str(i)
+            library_subdomain = parser.get(library_index, "library_subdomain")
+            library_name = parser.get(library_index, "library_name")
+            web_logger.info("Started library %s", library_name)
+            url = "https://" + library_subdomain + ".overdrive.com/"
             driver.get(url + "account/loans")
             sleep(3)
             # Check signed in status and either sign in or move on
             if "/account/ozone/sign-in" in driver.current_url:
-                sign_in(driver, library_page, parser.get('library_' + str(i), "card_number"),
-                        parser.get('library_' + str(i), "card_pin"), parser.get('library_' + str(i), "library_select"))
-            download_loans(driver, df, library_page)
+                web_login(driver, library_name, parser.get(library_index, "card_number"),
+                        parser.get(library_index, "card_pin"), parser.get(library_index, "library_select"))
+            web_dl(driver, df, library_name)
             sleep(2)
              # Output book data to csv
         df_out = pd.DataFrame({
         'library_name': library_list,
-        'book_id': id_list,
-        'audiobook_title': title_list
+        'book_id': book_id_list,
+        'book_title': book_title_list,
+        'book_odm': book_odm_list
         })
         if os.path.exists(csv_path):
             df_out.to_csv(csv_path, mode='a', index=False, header=False)
@@ -310,7 +313,8 @@ def web_run():
         driver.close()
         web_logger.info("AutoBooksWeb Complete")
         odmlist = glob.glob("*.odm")
-        # Process log file for web lines.
+
+        # Process log file for Cronitor.
         with open(LOG_FILENAME) as logs:
             lines = logs.readlines()
             log_list = []
@@ -322,9 +326,9 @@ def web_run():
 
         # Call Minimum DL functions
         if len(odmlist) != 0:
-            process_logger.info("Started AutoBooks DL from web V.%s By:IvyB", scriptver)
+            process_logger.info("Started AutoBooks V.%s By:IvyB", scriptver)
             monitor.ping(state='run',
-                         message='AutoBooks DL by IvyB Started from web Version:' + scriptver + '\n outdir:' + outdir + '\n logfile:' + LOG_FILENAME + '\n Found the following books \n' + " ".join(
+                         message='AutoBooks by IvyB Started from web Version:' + scriptver + '\n outdir:' + outdir + '\n logfile:' + LOG_FILENAME + '\n Found the following books \n' + " ".join(
                              odmlist))
             process_books(odmlist)
             m4blist = glob.glob("*.m4b")
@@ -332,7 +336,7 @@ def web_run():
             # Process log file for Cronitor
             with open(LOG_FILENAME) as logs:
                 lines = logs.readlines()
-                #log_list = []
+                log_list = []
                 for line in lines:
                     if any(term in line for term in ("Downloading", "expired", "generating", "merged")):
                         log_list.append(line)
