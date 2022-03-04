@@ -44,6 +44,7 @@ log_list = []
 library_list = []
 id_list = []
 title_list = []
+info_list = []
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(scriptdir, 'web_known_files.csv')
 
@@ -151,7 +152,7 @@ def cleanup(m4bs, odms, odmfolder):
 # Function for sign in
 def sign_in(driver, name, cardno, pin, select):
     global error_count
-    web_logger.info("sign_in: Signing into library %s with card: %s", name, cardno)
+    web_logger.info("sign_in: Signing into %s with card: %s", name, cardno)
     # Attempt select library from dropdown
     if select != "false":
         select_box = driver.find_element(By.XPATH, '//input[@id="signin-options"]')
@@ -194,13 +195,11 @@ def download_loans(driver, df, name):
             book_info = i.get_attribute('aria-label')
             book_dl_url = book_url.replace('/media/', '/media/download/audiobook-mp3/')
             book_id = int(''.join(filter(str.isdigit, book_url)))
-            if "eBook." in book_info:
-                pass
-            else:
-                try:
-                    df.query(f"book_id == {book_id}")
+            if "Audiobook." in book_info:
+                
+                if str(book_id) in df['book_id'].to_string():
                     web_logger.info('download_loans: Skipped %s found in known books', str.strip(book_title))
-                except (NameError, AttributeError):
+                else:
                     library_list.append(name)
                     id_list.append(book_id)
                     title_list.append(str.strip(book_title))
@@ -215,7 +214,6 @@ def download_loans(driver, df, name):
         web_logger.info("download_loans: Finished downloading %s books from library %s", bookcount, name)
     return ()
 
-
 def main_run():
     # AutoBooks
     process_logger.info("Started AutoBooks V.%s By:IvyB", scriptver)
@@ -228,7 +226,7 @@ def main_run():
     else:
         odm_list = glob.glob("*.odm")
         monitor.ping(state='run',
-                     message='AutoBooks DL by IvyB Version:' + scriptver + '\n odmdir:' + odmdir + '\n outdir:' + outdir + '\n logfile:' + LOG_FILENAME + '\n Found the following books \n' + " ".join(
+                     message='AutoBooks by IvyB Version:' + scriptver + '\n odmdir:' + odmdir + '\n outdir:' + outdir + '\n logfile:' + LOG_FILENAME + '\n Found the following books \n' + " ".join(
                          odm_list))
 
         # Check if any .odm files exist in odmdir
@@ -272,7 +270,7 @@ def web_run():
             "download.directory_upgrade": True
         }
         options.add_argument('user-data-dir=' + os.path.join(scriptdir, "chrome_profile"))
-        # Headless mode
+        # Headless mode check
         if parser.get('DEFAULT', "web_headless") == "true":
             options.add_argument('--headless')
             options.add_argument('--disable-gpu')
@@ -341,7 +339,7 @@ def web_run():
                 # Send complete event and log to Cronitor
                 monitor.ping(state='complete', message="".join(log_list),
                              metrics={'count': len(odmlist), 'error_count': error_count})
-    return["\n".join(title_list), error_count]
+        #return["\n".join(title_list), error_count]
 
 
 if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "true":
