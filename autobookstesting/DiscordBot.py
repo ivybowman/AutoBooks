@@ -29,7 +29,7 @@ async def on_ready():
 
 @bot.command(name='web')
 async def hello(ctx):
-    #Starting embed and running web
+    #Send starting embed and running web
     embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....", description="Version: "+scriptver+" \nLogfile: "+LOG_FILENAME, color=0xFFAFCC)
     embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png")
     embed_start.set_footer(text="OS: "+ platform.platform()+" Host: "+platform.node())
