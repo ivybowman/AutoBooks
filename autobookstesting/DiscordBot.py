@@ -34,7 +34,8 @@ async def hello(ctx):
     embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png")
     embed_start.set_footer(text="OS: "+ platform.platform()+" Host: "+platform.node())
     await ctx.channel.send(embed=embed_start)
-    web_info = web_run()
+    web_info = ["test-data", "test-data2"]
+    web_run()
 
     #Ending Embed
     embed_end = discord.Embed(title="AutoBooks Web Finished", description="See log info below for details. ErrorCount: "+str(web_info[1]), color=0xFFAFCC)

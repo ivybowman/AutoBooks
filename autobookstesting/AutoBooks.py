@@ -9,27 +9,20 @@ from time import sleep
 from pathlib import Path
 import odmpy.odm as odmpy
 from loguru import logger
-from utils import InterceptHandler, RedactingFormatter
+from utils import InterceptHandler, RedactingFormatter, process_logfile
 import pandas as pd
 import selenium
 import cronitor
 import glob
 import sys
 import shutil
-import logging
 import os
 import requests
 
 # Set Vars
 scriptver = "0.2.1"  # Version number of script
 error_count = 0
-good_odm_list = []
-bad_odm_list = []
-log_list = []
-library_list = []
-book_id_list = []
-book_title_list = []
-book_odm_list = []
+good_odm_list, bad_odm_list, log_list, library_list, book_id_list, book_title_list, book_odm_list = ([] for i in range(7))
 scriptdir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(scriptdir, 'web_known_files.csv')
 
@@ -66,14 +59,13 @@ odmpy.logger.addHandler(InterceptHandler())
 parser = ConfigParser()
 parser.read(os.path.join(scriptdir, "autobooks.conf"))
 odmdir = parser.get("DEFAULT",
-                    "odm_folder")  # Folder that contains the .odm files to process. For windows use / slashes
-outdir = parser.get("DEFAULT",
-                    "out_folder")  # Folder where the finished audiobooks will be moved to. For windows use / slashes
+                    "odm_folder")
+outdir = parser.get("DEFAULT", "out_folder")
 
-# Cronitor Setup
-cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")  # Cronitor API key https://cronitor.io/
-monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_main"))  # Set Cronitor monitor name
-web_monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_web"))  # Set Cronitor monitor name
+# Cronitor Setup https://cronitor.io/
+cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")
+monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_main"))
+web_monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_web"))
 
 
 # Function to process the books.
@@ -111,8 +103,7 @@ def cleanup(m4bs, odms, odmfolder):
     global error_count
     # Move m4b files to outdir
     for x in m4bs:
-        exists = os.path.isfile(os.path.join(outdir + x))
-        if exists:
+        if os.path.isfile(os.path.join(outdir + x)):
             logger.error("Book {} already exists in outdir skipped", x)
             error_count += 1
         else:
@@ -220,16 +211,11 @@ def main_run():
             # Cleanup input and output files
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, odmdir)
-            # Process log file for Cronitor
-            with open(LOG_FILENAME) as logs:
-                lines = logs.readlines()
-                log_list = []
-                for line in lines:
-                    if any(term in line for term in ("Downloading", "expired", "generating", "merged")):
-                        log_list.append(line)
-                # Send complete event and log to Cronitor
-                monitor.ping(state='complete', message="".join(log_list),
-                             metrics={'count': len(odm_list), 'error_count': error_count})
+            #Fetch log messages
+            process_logfile(LOG_FILENAME, terms=("Downloading", "expired", "generating", "merged", "saved"))
+            # Send complete event and log to Cronitor
+            monitor.ping(state='complete', message="".join(log_list),
+                        metrics={'count': len(odm_list), 'error_count': error_count})
 
 
 # AutoBooks Web Code
@@ -328,4 +314,4 @@ def web_run():
 
 
 if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "true":
-    web_run()
+    main_run()

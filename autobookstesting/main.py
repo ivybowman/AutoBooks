@@ -1,4 +1,6 @@
-from AutoBooks import web_run
+from AutoBooks import web_run, main_run
+from DiscordBot import discord_run
 import argparse
+
 if __name__ == "__main__":
-    web_run()
+    discord_run()
