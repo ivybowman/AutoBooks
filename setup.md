@@ -45,7 +45,7 @@ Note: AutoBooks Web is not compatible with WSL, and requires X11 forwarding to r
 To install from the latest source run the following command.  
 `pip3 install git+https://git@github.com/ivybowman/autobooks.git --upgrade --force-reinstall`
 To install from a specific version run the following command.
-`pip3 install git+https://git@github.com/ivybowman/autobooks.git@v0.2.0-alpha --upgrade`
+`pip3 install git+https://git@github.com/ivybowman/autobooks.git@v0.2.1-alpha --upgrade`
 To uninstall AutoBooks run the following command.  
 `pip3 uninstall autobooks`
 

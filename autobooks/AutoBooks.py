@@ -152,7 +152,7 @@ def cleanup(m4bs, odms, odmfolder):
 # Function for login
 def web_login(driver, name, cardno, pin, select):
     global error_count
-    web_logger.info("web_login: Logging into %s", name)
+    web_logger.info("web_login: Logging into library: %s", name)
     # Attempt selecting library from dropdown
     if select != "false":
         select_box = driver.find_element(By.XPATH, '//input[@id="signin-options"]')
@@ -178,11 +178,11 @@ def web_dl(driver, df, name):
     #Gather all book title elements and check if any found
     books = driver.find_elements(By.XPATH, '//a[@tabindex="0"][@role="link"]')
     if len(books) == 0:
-        web_logger.warning("Can't find books skipped library %s", name)
+        web_logger.warning("Can't find books skipped library: %s", name)
         error_count += 1
         return ()
     else:
-        web_logger.info("web_dl: Begin DL from %s", name)
+        web_logger.info("web_dl: Begin DL from library: %s ", name)
         bookcount = 0
         for i in books:
             #Fetch info about the book
@@ -196,14 +196,13 @@ def web_dl(driver, df, name):
                 if str(book_id) in df['book_id'].to_string():
                     web_logger.info('web_dl: Skipped %s found in known books', book_title)
                 else:
-                    
                     # Download book
                     driver.get(book_dl_url)
                     web_logger.info("web_dl: Downloaded book: %s", book_title)
                     book_odm = max(glob.glob("*.odm"), key=os.path.getmtime)
+                    bookcount += 1
 
                     #Add book data to vars
-                    bookcount += 1
                     library_list.append(name)
                     book_id_list.append(book_id)
                     book_title_list.append(book_title)
@@ -279,10 +278,12 @@ def web_run():
         driver = webdriver.Chrome(options=options)
 
         # Attempt to read known files csv for checking books
-        try:
+        if os.path.exists(csv_path):
             df = pd.read_csv(csv_path, sep=",")
-        except FileNotFoundError:
-            df = False
+        else:
+           df = pd.DataFrame({
+            'book_id': book_id_list,
+            })
         os.chdir(os.path.join(scriptdir,"web_downloads"))
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, len(parser.sections())):
@@ -305,7 +306,7 @@ def web_run():
         'book_id': book_id_list,
         'book_title': book_title_list,
         'book_odm': book_odm_list
-        })
+        }) 
         if os.path.exists(csv_path):
             df_out.to_csv(csv_path, mode='a', index=False, header=False)
         else:
