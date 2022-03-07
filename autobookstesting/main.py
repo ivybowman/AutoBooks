@@ -1,4 +1,4 @@
-from AutoBooks import web_run, main_run
+# from AutoBooks import web_run, main_run
 from DiscordBot import discord_run
 import argparse
 

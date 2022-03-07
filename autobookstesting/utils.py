@@ -1,9 +1,9 @@
 import logging
-from loguru import logger
-import sys
-from datetime import datetime
 
-#Formatter to remove patterns from log output
+from loguru import logger
+
+
+# Formatter to remove patterns from log output
 class RedactingFormatter:
     def __init__(self, patterns=None, source_fmt=None):
         super().__init__()
@@ -17,7 +17,8 @@ class RedactingFormatter:
         record["extra"]["scrubbed"] = scrubbed
         return self.fmt
 
-#Handler to intercept logging messages for loguru
+
+# Handler to intercept logging messages for loguru
 class InterceptHandler(logging.Handler):
     def emit(self, record):
         try:
@@ -33,9 +34,11 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
+
+
 # Process log file for Cronitor
-def process_logfile(LOG_FILENAME, terms=None):
-    with open(LOG_FILENAME) as logs:
+def process_logfile(logfile, terms=None):
+    with open(logfile) as logs:
         lines = logs.readlines()
         log_list = []
         for line in lines:

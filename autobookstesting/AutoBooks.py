@@ -36,15 +36,15 @@ else:
     os.mkdir(script_dir)
     main_conf = requests.get(
         'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
-    odmpy_conf = requests.get(
-        "https://raw.githubusercontent.com/ivybowman/AutoBooks/main/odmpydl.conf")
+    # odmpy_conf = requests.get(
+    #    "https://raw.githubusercontent.com/ivybowman/AutoBooks/main/odmpydl.conf")
     folders = ['log', 'downloads', 'profile', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
     with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as local_file:
         local_file.write(main_conf.content)
-    with open(os.path.join(script_dir, "odmpydl.conf"), mode='wb') as local_file:
-        local_file.write(odmpy_conf.content)
+    # with open(os.path.join(script_dir, "odmpydl.conf"), mode='wb') as local_file:
+    #   local_file.write(odmpy_conf.content)
     print("Finished setup please configure settings in file: ",
           os.path.join(script_dir, "autobooks.conf"))
     sys.exit(1)
@@ -95,31 +95,12 @@ def process(odm_list):
                 logger.error("FileAlreadyExists, likely from m4b creation attempt")
             except SystemExit as e:
                 bad_odm_list.append(x)
-                try:
+                if os.path.isfile("cover.jpg"):
                     os.remove("cover.jpg")
-                except FileNotFoundError:
-                    logger.debug("Could not remove cover.jpg, moving on")
-                else:
-                    logger.debug("Removed cover.jpg to prep for next attempt")
                 error_count += 1
             else:
                 good_odm_list.append(x)
     logger.info("Book Processing Finished")
-
-
-# Function to merge the books.
-def merge(odm_list):
-    global error_count
-    logger.info('Begin merging book list: {}', " ".join(odm_list))
-    for x in odm_list:
-        odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
-        with patch.object(sys, 'argv', odmpy_args):
-            try:
-                odmpy.run()
-            except FileNotFoundError:
-                logger.error("Could not find odm file {}", x)
-
-    logger.info("Book merging Finished")
 
 
 # Function to clean up in and out files.
@@ -195,7 +176,7 @@ def web_dl(driver, df, name):
             book_id = int(''.join(filter(str.isdigit, book_url)))
             book_title = book_info_split[0]
 
-            # Check if found book is an audiobook then download or skip.
+            # Check if found book is a not known audiobook
             if "Audiobook." in book_info:
                 if str(book_id) in df['book_id'].to_string():
                     logger.info('Skipped {} found in known books', book_title)
