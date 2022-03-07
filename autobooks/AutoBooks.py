@@ -56,7 +56,7 @@ redacting_formatter = RedactingFormatter(patterns=patterns, source_fmt=file_log_
 logger.configure(handlers=[
     {'sink': sys.stderr, "format": console_log_format},
     {'sink': LOG_FILENAME, "format": redacting_formatter.format},
-    # {'sink': process_logfile(), "format": cronitor_log_format.format}
+    # {'sink': process_logfile(), "format": cronitor_log_format}
 ])
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
@@ -79,7 +79,7 @@ def process(odm_list):
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
         if parser.get('DEFAULT', "test_args") == "True":
-            odmpy_args = ["odmpy", "dl","--nobookfolder", x]
+            odmpy_args = ["odmpy", "dl", "--nobookfolder", x]
         else:
             odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
         with patch.object(sys, 'argv', odmpy_args):
