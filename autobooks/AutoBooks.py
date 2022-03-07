@@ -36,15 +36,11 @@ else:
     os.mkdir(script_dir)
     main_conf = requests.get(
         'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
-    # odmpy_conf = requests.get(
-    #    "https://raw.githubusercontent.com/ivybowman/AutoBooks/main/odmpydl.conf")
     folders = ['log', 'downloads', 'profile', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
     with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as local_file:
         local_file.write(main_conf.content)
-    # with open(os.path.join(script_dir, "odmpydl.conf"), mode='wb') as local_file:
-    #   local_file.write(odmpy_conf.content)
     print("Finished setup please configure settings in file: ",
           os.path.join(script_dir, "autobooks.conf"))
     sys.exit(1)
