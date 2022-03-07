@@ -20,54 +20,54 @@ import os
 import requests
 
 # Set Vars
-scriptver = "0.2.1"  # Version number of script
+version = "0.2.1"  # Version number of script
 error_count = 0
 good_odm_list, bad_odm_list, library_list, book_id_list, book_title_list, book_odm_list = ([
 ] for i in range(6))
-scriptdir = os.path.join(Path.home(), "AutoBooks")
-csv_path = os.path.join(scriptdir, 'web_known_files.csv')
+script_dir = os.path.join(Path.home(), "AutoBooks")
+csv_path = os.path.join(script_dir, 'web_known_files.csv')
 
 # Check paths, and if not found do first time setup
-if os.path.exists(scriptdir):
-    os.chdir(scriptdir)
+if os.path.exists(script_dir):
+    os.chdir(script_dir)
 else:
-    os.mkdir(scriptdir)
+    os.mkdir(script_dir)
     main_conf = requests.get(
         'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
     odmpy_conf = requests.get(
         "https://raw.githubusercontent.com/ivybowman/AutoBooks/main/odmpydl.conf")
     folders = ['log', 'web_downloads', 'chrome_profile', 'sourcefiles']
     for folder in folders:
-        os.mkdir(os.path.join(scriptdir, folder))
-    with open(os.path.join(scriptdir, "autobooks.conf"), mode='wb') as localfile:
+        os.mkdir(os.path.join(script_dir, folder))
+    with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as localfile:
         localfile.write(main_conf.content)
-    with open(os.path.join(scriptdir, "odmpydl.conf"), mode='wb') as localfile:
+    with open(os.path.join(script_dir, "odmpydl.conf"), mode='wb') as localfile:
         localfile.write(odmpy_conf.content)
     print("Finished setup please configure settings in file: ",
-          os.path.join(scriptdir, "autobooks.conf"))
+          os.path.join(script_dir, "autobooks.conf"))
     sys.exit(1)
 
 # Logging Config
 LOG_FILENAME = os.path.join(
-    scriptdir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d-%Y}.log'.format(datetime.now()))
+    script_dir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d-%Y}.log'.format(datetime.now()))
+patterns = ['[34m[1m', '[39m[22m', '[34m[22m', '[35m[22m']
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
 cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
 file_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {extra[scrubbed]}\n{exception}"
-redacting_formatter = RedactingFormatter(patterns=[
-                                         "[34m[1m", "[39m[22m", "[34m[22m", "[35m[22m"], source_fmt=file_log_format)
+redacting_formatter = RedactingFormatter(patterns=patterns, source_fmt=file_log_format)
 logger.configure(handlers=[
     {'sink': sys.stderr, "format": console_log_format},
     {'sink': LOG_FILENAME, "format": redacting_formatter.format},
-    #{'sink': process_logfile(), "format": cronitor_log_format.format}
+    # {'sink': process_logfile(), "format": cronitor_log_format.format}
 ])
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
 
 # Read config file
 parser = ConfigParser()
-parser.read(os.path.join(scriptdir, "autobooks.conf"))
-odmdir = parser.get("DEFAULT", "odm_folder")
-outdir = parser.get("DEFAULT", "out_folder")
+parser.read(os.path.join(script_dir, "autobooks.conf"))
+odm_dir = parser.get("DEFAULT", "odm_folder")
+out_dir = parser.get("DEFAULT", "out_folder")
 library_count = len(parser.sections())
 # Cronitor Setup https://cronitor.io/
 cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")
@@ -78,13 +78,13 @@ web_monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_web"))
 # Function to process the books.
 def process_books(odm_list):
     global error_count
-    logger.info('Begin processing booklist: {}', " ".join(odm_list))
+    logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
         if parser.get('DEFAULT', "test_args") == "true":
             odmpy_args = ["odmpy", "dl", x]
         else:
             odmpy_args = ["odmpy", "dl", "@" +
-                          os.path.join(scriptdir, "odmpydl.conf"), x]
+                          os.path.join(script_dir, "odmpydl.conf"), x]
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
@@ -112,22 +112,22 @@ def cleanup(m4bs, odms, odmfolder):
     global error_count
     # Move m4b files to outdir
     for x in m4bs:
-        if os.path.isfile(os.path.join(outdir + x)):
+        if os.path.isfile(os.path.join(out_dir + x)):
             logger.error("Book {} already exists in outdir skipped", x)
             error_count += 1
         else:
-            shutil.move(os.path.join(odmfolder, x), os.path.join(outdir, x))
+            shutil.move(os.path.join(odmfolder, x), os.path.join(out_dir, x))
             logger.info("Moved book {} to outdir", x)
     # Backup source files
     sourcefiles = odms + glob.glob("*.license")
     for x in sourcefiles:
-        if os.path.isfile(os.path.join(scriptdir, "sourcefiles", x)):
+        if os.path.isfile(os.path.join(script_dir, "sourcefiles", x)):
             logger.error(
                 "File {} already exists in sourcefiles dir skipped", x)
             error_count += 1
         else:
             #license_file = x.replace(".odm",".license")
-            shutil.move(x, os.path.join(scriptdir, "sourcefiles", x))
+            shutil.move(x, os.path.join(script_dir, "sourcefiles", x))
             #shutil.move(license_file, os.path.join(scriptdir, "sourcefiles", license_file))
             logger.info("Moved file pair {} to sourcefiles", x)
 
@@ -204,17 +204,17 @@ def web_dl(driver, df, name):
 
 def main_run():
     # AutoBooks
-    logger.info("Started AutoBooks V.{} By:IvyB", scriptver)
+    logger.info("Started AutoBooks V.{} By:IvyB", version)
     # Try to change to ODM folder
     try:
-        os.chdir(odmdir)
+        os.chdir(odm_dir)
     except FileNotFoundError:
         logger.critical("The provided .odm dir was not found, exiting")
         sys.exit(1)
     else:
         odm_list = glob.glob("*.odm")
         monitor.ping(state='run',
-                     message=f'AutoBooks by IvyB Started from web V.{scriptver} \n odmdir: {odmdir} \n outdir:{outdir}\n logfile:{LOG_FILENAME}\n odmlist: \n{" ".join(odm_list)}')
+                     message=f'AutoBooks by IvyB Started from web V.{version} \n odmdir: {odm_dir} \n outdir:{out_dir}\n logfile:{LOG_FILENAME}\n odmlist: \n{" ".join(odm_list)}')
 
         # Check if any .odm files exist in odmdir
         if len(odm_list) == 0:
@@ -226,7 +226,7 @@ def main_run():
             process_books(odm_list)
             # Cleanup input and output files
             m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list, odmdir)
+            cleanup(m4blist, good_odm_list, odm_dir)
             # Fetch log messages
             logstr = process_logfile(LOG_FILENAME, terms=(
                 "Downloading", "expired", "generating", "merged", "saved"))
@@ -241,18 +241,18 @@ def web_run():
         logger.critical("No libraries configured!")
         sys.exit(1)
     else:
-        logger.info("Started AutoBooks Web V.{} By:IvyB", scriptver)
+        logger.info("Started AutoBooks Web V.{} By:IvyB", version)
         monitor.ping(state='run',
-                     message=f'AutoBooks Web by IvyB Version: {scriptver} \n logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}')
+                     message=f'AutoBooks Web by IvyB Version: {version} \n logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}')
         # Configure WebDriver options
         options = Options()
         prefs = {
-            "download.default_directory": os.path.join(scriptdir, "web_downloads"),
+            "download.default_directory": os.path.join(script_dir, "web_downloads"),
             "download.prompt_for_download": False,
             "download.directory_upgrade": True
         }
         options.add_argument('user-data-dir=' +
-                             os.path.join(scriptdir, "chrome_profile"))
+                             os.path.join(script_dir, "chrome_profile"))
         # Headless mode check
         if parser.get('DEFAULT', "web_headless") == "true":
             options.add_argument('--headless')
@@ -267,7 +267,7 @@ def web_run():
             df = pd.DataFrame({
                 'book_id': book_id_list,
             })
-        os.chdir(os.path.join(scriptdir, "web_downloads"))
+        os.chdir(os.path.join(script_dir, "web_downloads"))
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, len(parser.sections())):
             library_index = 'library_' + str(i)
@@ -305,13 +305,13 @@ def web_run():
 
         # Call DL to process files from web
         if len(odmlist) != 0:
-            logger.info("Started AutoBooks V.{} By:IvyB", scriptver)
+            logger.info("Started AutoBooks V.{} By:IvyB", version)
             monitor.ping(state='run',
-                         message=f'AutoBooks by IvyB Started from web V.{scriptver} \n outdir:{outdir}\n logfile:{LOG_FILENAME}\n odmlist: \n{" ".join(odmlist)}')
+                         message=f'AutoBooks by IvyB Started from web V.{version} \n outdir:{out_dir}\n logfile:{LOG_FILENAME}\n odmlist: \n{" ".join(odmlist)}')
             process_books(odmlist)
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, os.path.join(
-                scriptdir, "web_downloads"))
+                script_dir, "web_downloads"))
             # Process log file for Cronitor
             logstr = process_logfile(LOG_FILENAME, terms=(
                 "Downloading", "expired", "generating", "merged"))
