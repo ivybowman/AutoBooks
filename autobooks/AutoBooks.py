@@ -78,7 +78,7 @@ def process(odm_list):
     global error_count
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
-        if parser.get('DEFAULT', "test_args") == "true":
+        if parser.get('DEFAULT', "test_args") is True:
             odmpy_args = ["odmpy", "dl", x]
         else:
             odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
@@ -249,7 +249,7 @@ def web_run():
         options.add_argument('user-data-dir=' +
                              os.path.join(script_dir, "profile"))
         # Headless mode check
-        if parser.get('DEFAULT', "web_headless") == "true":
+        if parser.get('DEFAULT', "web_headless") is True:
             options.add_argument('--headless')
             options.add_argument('--disable-gpu')
         options.add_experimental_option('prefs', prefs)
@@ -319,5 +319,5 @@ def web_run():
         # return["\n".join(title_list), error_count]
 
 
-if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "true":
+if __name__ == "__main__" and parser.get('DEFAULT', "test_run") is True:
     web_run()
