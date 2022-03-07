@@ -38,7 +38,7 @@ else:
         'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
     odmpy_conf = requests.get(
         "https://raw.githubusercontent.com/ivybowman/AutoBooks/main/odmpydl.conf")
-    folders = ['log', 'web_downloads', 'web_profile', 'source_files']
+    folders = ['log', 'downloads', 'profile', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
     with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as local_file:
@@ -78,23 +78,21 @@ web_monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_web"))
 
 
 # Function to process the books.
-def process_books(odm_list):
+def process(odm_list):
     global error_count
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
         if parser.get('DEFAULT', "test_args") == "true":
             odmpy_args = ["odmpy", "dl", x]
         else:
-            odmpy_args = ["odmpy", "dl", "@" +
-                          os.path.join(script_dir, "odmpydl.conf"), x]
+            odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
             except FileNotFoundError:
                 logger.error("Could not find odm file {}", x)
             except FileExistsError:
-                logger.error(
-                    "FileAlreadyExists, likely from m4b creation attempt")
+                logger.error("FileAlreadyExists, likely from m4b creation attempt")
             except SystemExit as e:
                 bad_odm_list.append(x)
                 try:
@@ -109,6 +107,21 @@ def process_books(odm_list):
     logger.info("Book Processing Finished")
 
 
+# Function to merge the books.
+def merge(odm_list):
+    global error_count
+    logger.info('Begin merging book list: {}', " ".join(odm_list))
+    for x in odm_list:
+        odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
+        with patch.object(sys, 'argv', odmpy_args):
+            try:
+                odmpy.run()
+            except FileNotFoundError:
+                logger.error("Could not find odm file {}", x)
+
+    logger.info("Book merging Finished")
+
+
 # Function to clean up in and out files.
 def cleanup(m4b_list, odm_list, odm_folder):
     global error_count
@@ -121,16 +134,15 @@ def cleanup(m4b_list, odm_list, odm_folder):
             shutil.move(os.path.join(odm_folder, x), os.path.join(out_dir, x))
             logger.info("Moved book {} to out_dir", x)
     # Backup source files
-    source_files = odm_list + glob.glob("*.license")
-    for x in source_files:
+    for x in odm_list:
         if os.path.isfile(os.path.join(script_dir, "source_files", x)):
             logger.error(
                 "File {} already exists in source files dir skipped", x)
             error_count += 1
         else:
-            # license_file = x.replace(".odm",".license")
+            license_file = x.replace(".odm", ".license")
             shutil.move(x, os.path.join(script_dir, "source_files", x))
-            # shutil.move(license_file, os.path.join(script_dir, "source_files", license_file))
+            shutil.move(license_file, os.path.join(script_dir, "source_files", license_file))
             logger.info("Moved file pair {} to source files", x)
 
 
@@ -182,7 +194,7 @@ def web_dl(driver, df, name):
                 '/media/', '/media/download/audiobook-mp3/')
             book_id = int(''.join(filter(str.isdigit, book_url)))
             book_title = book_info_split[0]
-            
+
             # Check if found book is an audiobook then download or skip.
             if "Audiobook." in book_info:
                 if str(book_id) in df['book_id'].to_string():
@@ -229,8 +241,8 @@ def main_run():
             logger.critical("No .odm files found, exiting")
             sys.exit(1)
         else:
-            process_books(odm_list)
-            # Cleanup input and output files
+            process(odm_list)
+            # Cleanup files
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, odm_dir)
             # Send complete event and log to Cronitor
@@ -253,12 +265,12 @@ def web_run():
         # Configure WebDriver options
         options = Options()
         prefs = {
-            "download.default_directory": os.path.join(script_dir, "web_downloads"),
+            "download.default_directory": os.path.join(script_dir, "downloads"),
             "download.prompt_for_download": False,
             "download.directory_upgrade": True
         }
         options.add_argument('user-data-dir=' +
-                             os.path.join(script_dir, "web_profile"))
+                             os.path.join(script_dir, "profile"))
         # Headless mode check
         if parser.get('DEFAULT', "web_headless") == "true":
             options.add_argument('--headless')
@@ -274,7 +286,7 @@ def web_run():
             df = pd.DataFrame({
                 'book_id': book_id_list,
             })
-        os.chdir(os.path.join(script_dir, "web_downloads"))
+        os.chdir(os.path.join(script_dir, "downloads"))
 
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, len(parser.sections())):
@@ -317,10 +329,10 @@ def web_run():
             monitor.ping(state='run',
                          message=f'AutoBooks by IvyB Started from web V.{version} \n' +
                                  f'out_dir:{out_dir}\n logfile:{LOG_FILENAME}\n odm_list: \n{" ".join(web_odm_list)}')
-            process_books(web_odm_list)
+            process(web_odm_list)
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, os.path.join(
-                script_dir, "web_downloads"))
+                script_dir, "downloads"))
             # Process log file for Cronitor
             log_str = process_logfile(LOG_FILENAME, terms=(
                 "Downloading", "expired", "generating", "merged"))
