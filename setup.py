@@ -13,11 +13,10 @@ setup(
     url="https://github.com/ivybowman/AutoBooks",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    packages=["autobooks", "autobookstesting"],
+    packages=["autobooks"],
     entry_points={
         "console_scripts": [
             "autobooks = autobooks.AutoBooks:main_run",
-            "autobooks-web-test = autobookstesting.AutoBooks:web_run",
             "autobooks-web = autobooks.AutoBooks:web_run",
             "autobooks-discord = autobooks.AutoBooksDiscord:run"
         ]
