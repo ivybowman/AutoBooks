@@ -78,8 +78,8 @@ def process(odm_list):
     global error_count
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
-        if parser.get('DEFAULT', "test_args") is True:
-            odmpy_args = ["odmpy", "dl", x]
+        if parser.get('DEFAULT', "test_args") == "True":
+            odmpy_args = ["odmpy", "dl","--nobookfolder", x]
         else:
             odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
         with patch.object(sys, 'argv', odmpy_args):
@@ -112,14 +112,14 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved book {} to out_dir", x)
     # Backup source files
     for x in odm_list:
-        if os.path.isfile(os.path.join(script_dir, "source_files", x)):
+        if os.path.isfile(os.path.join(script_dir, "source_backup", x)):
             logger.error(
-                "File {} already exists in source files dir skipped", x)
+                "File pair {} already exists in source backup dir skipped", x)
             error_count += 1
         else:
             license_file = x.replace(".odm", ".license")
-            shutil.move(x, os.path.join(script_dir, "source_files", x))
-            shutil.move(license_file, os.path.join(script_dir, "source_files", license_file))
+            shutil.move(x, os.path.join(script_dir, "source_backup", x))
+            shutil.move(license_file, os.path.join(script_dir, "source_backup", license_file))
             logger.info("Moved file pair {} to source files", x)
 
 
@@ -128,7 +128,7 @@ def web_login(driver, name, card_num, pin, select):
     global error_count
     logger.info("Logging into library: {}", name)
     # Attempt selecting library from dropdown
-    if select != "false":
+    if select != "False":
         select_box = driver.find_element(
             By.XPATH, '//input[@id="signin-options"]')
         webdriver.ActionChains(driver).move_to_element(
@@ -143,7 +143,7 @@ def web_login(driver, name, card_num, pin, select):
         logger.critical("Can't find card number field skipped library {}", name)
         error_count += 1
     # Attempt sending pin Note:Some pages don't have pin input
-    if pin != "false":
+    if pin != "False":
         driver.find_element(By.ID, "password").send_keys(pin)
     driver.find_element(
         By.CSS_SELECTOR, "button.signin-button.button.secondary").click()
@@ -207,9 +207,9 @@ def main_run():
     else:
         odm_list = glob.glob("*.odm")
         monitor.ping(state='run',
-                     message=f'AutoBooks by IvyB Started from web V.{version} \n' +
-                             f'odm_dir: {odm_dir} \n out_dir:{out_dir}\n logfile:{LOG_FILENAME}\n' +
-                             f'odm_list: \n{" ".join(odm_list)}')
+                     message=f"AutoBooks by IvyB v.{version} \n"
+                             f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
+                             f"odm_list:{odm_list}")
 
         # Check if any .odm files exist in odm_dir
         if len(odm_list) == 0:
@@ -237,8 +237,9 @@ def web_run():
     else:
         logger.info("Started AutoBooks Web V.{} By:IvyB", version)
         monitor.ping(state='run',
-                     message=f'AutoBooks Web by IvyB V.{version} \n' +
-                             f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}')
+                     message=(f'AutoBooks Web by IvyB V.{version} \n'
+                              f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}'))
+
         # Configure WebDriver options
         options = Options()
         prefs = {
@@ -249,7 +250,7 @@ def web_run():
         options.add_argument('user-data-dir=' +
                              os.path.join(script_dir, "profile"))
         # Headless mode check
-        if parser.get('DEFAULT', "web_headless") is True:
+        if parser.get('DEFAULT', "web_headless") == "True":
             options.add_argument('--headless')
             options.add_argument('--disable-gpu')
         options.add_experimental_option('prefs', prefs)
@@ -304,8 +305,9 @@ def web_run():
         if len(web_odm_list) != 0:
             logger.info("Started AutoBooks V.{} By:IvyB", version)
             monitor.ping(state='run',
-                         message=f'AutoBooks by IvyB Started from web V.{version} \n' +
-                                 f'out_dir:{out_dir}\n logfile:{LOG_FILENAME}\n odm_list: \n{" ".join(web_odm_list)}')
+                         message=f"AutoBooks by IvyB v.{version} \n"
+                                 f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
+                                 f"odm_list:{web_odm_list}")
             process(web_odm_list)
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, os.path.join(
@@ -319,5 +321,5 @@ def web_run():
         # return["\n".join(title_list), error_count]
 
 
-if __name__ == "__main__" and parser.get('DEFAULT', "test_run") is True:
+if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "True":
     web_run()
