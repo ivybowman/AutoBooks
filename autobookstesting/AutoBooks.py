@@ -135,7 +135,7 @@ def cleanup(m4b_list, odm_list, odm_folder):
 
 
 # Function for login
-def web_login(driver, name, cardno, pin, select):
+def web_login(driver, name, card_num, pin, select):
     global error_count
     logger.info("Logging into library: {}", name)
     # Attempt selecting library from dropdown
@@ -149,7 +149,7 @@ def web_login(driver, name, cardno, pin, select):
             Keys.ARROW_DOWN).send_keys(Keys.RETURN).perform()
     # Attempt sending card number
     try:
-        driver.find_element(By.ID, "username").send_keys(cardno)
+        driver.find_element(By.ID, "username").send_keys(card_num)
     except selenium.common.exceptions.NoSuchElementException:
         logger.critical("Can't find card number field skipped library {}", name)
         error_count += 1
@@ -182,6 +182,8 @@ def web_dl(driver, df, name):
                 '/media/', '/media/download/audiobook-mp3/')
             book_id = int(''.join(filter(str.isdigit, book_url)))
             book_title = book_info_split[0]
+            
+            # Check if found book is an audiobook then download or skip.
             if "Audiobook." in book_info:
                 if str(book_id) in df['book_id'].to_string():
                     logger.info('Skipped {} found in known books', book_title)
@@ -268,6 +270,7 @@ def web_run():
         if os.path.exists(csv_path):
             df = pd.read_csv(csv_path, sep=",")
         else:
+            # Failing above create an empty df for checking
             df = pd.DataFrame({
                 'book_id': book_id_list,
             })
