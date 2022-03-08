@@ -46,8 +46,8 @@ else:
     sys.exit(1)
 
 # Logging Config
-LOG_FILENAME = os.path.join(
-    script_dir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d-%Y}.log'.format(datetime.now()))
+LOG_PATH = os.path.join(script_dir, 'log')
+LOG_FILENAME = os.path.join(LOG_PATH, "AutoBooks.log")
 patterns = ['[34m[1m', '[39m[22m', '[34m[22m', '[35m[22m']
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
 cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
@@ -55,8 +55,8 @@ file_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {extra[scrubbe
 redacting_formatter = RedactingFormatter(patterns=patterns, source_fmt=file_log_format)
 logger.configure(handlers=[
     {'sink': sys.stderr, "format": console_log_format},
-    {'sink': LOG_FILENAME, "format": redacting_formatter.format},
-    # {'sink': process_logfile(), "format": cronitor_log_format}
+    {'sink': LOG_FILENAME,
+     "format": redacting_formatter.format, "retention": 10, "rotation": "1 day"},
 ])
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
@@ -70,7 +70,6 @@ library_count = len(parser.sections())
 # Cronitor Setup https://cronitor.io/
 cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")
 monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_main"))
-web_monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_web"))
 
 
 # Function to process the books.
