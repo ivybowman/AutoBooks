@@ -1,6 +1,6 @@
 # AutoBooks
 
-Python tool to automate processing a batch of OverDrive audiobooks.  
+Python tools to automate processing a batch of OverDrive audiobooks.  
 
 # Important Disclaimer
 
@@ -58,24 +58,4 @@ To uninstall AutoBooks run the following command.
 - macOS(GUI) Terminal: `open -a TextEdit ~/AutoBooks/autobooks.conf`
 - Linux or macOS(CLI): `nano ~/AutoBooks/autobooks.conf`
 
-### Config Options
-``` 
-[DEFAULT]
-cronitor_name_main = AutoBooks #Name of monitor to use for Cronitor in the processing function
-cronitor_name_web = AutoBooksWeb #Name of monitor to use for Cronitor in the web function.
-cronitor_apikey = #Apikey for Cronitor to send monitoring data.
-discord_bot_token = #Optional for using the discord bot functionality.
-test_args = false #Picks args for odmpy, true disables merging into m4b files 
-test_run = false #Picks whether to enable a function call used for testing. Do not use with the autobooks-web command.
-web_headless = true #Pickks whether to run chrome in headless mode. Required for ssh support without X11 forwarding.
-odm_folder = #Folder where your .odm files are located.
-out_folder = #Folder where m4b files will be moved to.
-
-#To add more libraries just make a copy of the below section and increment the number. 
-[library_0]
-library_page = #Overdrive subdomain of your library. Ex: "examplepage" from "https://examplepage.overdrive.com/"
-library_select = false #Library select box contents here. If not used for sign in put "false" Ex: "Example County Library"
-card_number = #Library card number here
-card_pin = #Library card pin here. If not used for sign in put "false"
-```
 
