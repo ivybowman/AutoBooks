@@ -26,7 +26,7 @@ async def on_ready():
 async def hello(ctx):
     # Send starting embed and running web
     embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....",
-                                description="Version: " + version + " \nLogfile: " + LOG_FILENAME, color=0xFFAFCC)
+                                description=f"V.{version} \n Logfile: {LOG_FILENAME}", color=0xFFAFCC)
     embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png")
     embed_start.set_footer(text="OS: " + platform.platform() + " Host: " + platform.node())
     await ctx.channel.send(embed=embed_start)
@@ -42,7 +42,7 @@ async def hello(ctx):
         embed_end.add_field(name="Book List", value=str(web_info[0]), inline=False)
     await ctx.channel.send(embed=embed_end)
     # Logfile fetching
-    files = glob.glob(os.path.join(script_dir, "log", "*-Main.log"))
+    files = glob.glob(os.path.join(script_dir, "log", "*.log"))
     files2 = sorted(files, key=os.path.getmtime, reverse=True)
     print(files2[0])
     await ctx.channel.send(file=discord.File(files2[0]))

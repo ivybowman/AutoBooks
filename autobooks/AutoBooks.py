@@ -22,7 +22,7 @@ from selenium.webdriver.common.keys import Keys
 from utils import InterceptHandler, RedactingFormatter, process_logfile
 
 # Set Vars
-version = "0.2.1"  # Version number of script
+version = "0.3"  # Version number of script
 error_count = 0
 good_odm_list, bad_odm_list, library_list, book_id_list, book_title_list, book_odm_list = ([
 ] for i in range(6))
