@@ -31,4 +31,5 @@ MANIFEST
 autobooks.conf
 web_chromeprofile/
 web_edgeprofile/
+venv/
 
