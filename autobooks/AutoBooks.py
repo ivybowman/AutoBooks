@@ -1,5 +1,5 @@
 import glob
-import logging
+import platform
 import os
 import shutil
 import sys
@@ -19,8 +19,6 @@ from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_f
 # Set Vars
 version = "0.3"  # Version number of script
 error_count = 0
-good_odm_list = []
-bad_odm_list = []
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
 
@@ -64,9 +62,8 @@ odmpy.logger.addHandler(InterceptHandler())
 parser = ConfigParser()
 parser.read(os.path.join(script_dir, "autobooks.ini"))
 config = parser['DEFAULT']
-odm_dir = config["odm_folder"]
-out_dir = config["out_folder"]
 library_count = len(parser.sections())
+
 # Cronitor Setup https://cronitor.io/
 cronitor.api_key = config['cronitor_apikey']
 monitor = cronitor.Monitor(config['cronitor_monitor'])
@@ -75,9 +72,11 @@ monitor = cronitor.Monitor(config['cronitor_monitor'])
 # Function to process the books.
 def process(odm_list):
     global error_count
+    good_odm_list = []
+    bad_odm_list = []
+    odmpy_args = ["odmpy", "dl", "--nobookfolder"]
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
-        odmpy_args = ["odmpy", "dl", "--nobookfolder"]
         if config['odmpy_test_args'] == "True":
             odmpy_args.extend([x])
         else:
@@ -85,10 +84,8 @@ def process(odm_list):
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
-            except FileNotFoundError:
-                logger.error("Could not find odm file {}", x)
-            except FileExistsError:
-                logger.error("FileAlreadyExists, likely from m4b creation attempt")
+            except(FileNotFoundError, FileExistsError) as e:
+                logger.error("Error starting odm {} Message: {}", x, e)
             except SystemExit as e:
                 bad_odm_list.append(x)
                 if os.path.isfile("cover.jpg"):
@@ -97,6 +94,7 @@ def process(odm_list):
             else:
                 good_odm_list.append(x)
     logger.info("Book Processing Finished")
+    return good_odm_list, bad_odm_list
 
 
 # Function to clean up in and out files.
@@ -104,11 +102,11 @@ def cleanup(m4b_list, odm_list, odm_folder):
     global error_count
     # Move m4b files to out_dir
     for x in m4b_list:
-        if os.path.isfile(os.path.join(out_dir + x)):
+        if os.path.isfile(os.path.join(config["out_folder"] + x)):
             logger.error("Book {} already exists in out dir skipped", x)
             error_count += 1
         else:
-            shutil.move(os.path.join(odm_folder, x), os.path.join(out_dir, x))
+            shutil.move(os.path.join(odm_folder, x), os.path.join(config["out_folder"], x))
             logger.info("Moved book {} to out_dir", x)
     # Backup source files
     for x in odm_list:
@@ -129,9 +127,8 @@ def web_login(subdomain, card_num, pin, select):
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
     logger.success('Fetched login page. Status Code: {}', box.status_code)
     form_list = parse_form(box, "loginForms")['forms']
-    if len(form_list) == 1:
-        x = 0
-    else:
+    x = 0
+    if len(form_list) != 1:
         for form in form_list:
             if select in form['displayName']:
                 logger.success('Matched Config: {} to {}', select, form['displayName'])
@@ -199,9 +196,9 @@ def web_run():
         logger.critical("No libraries configured!")
         sys.exit(1)
     else:
-        logger.info("Started AutoBooks Web V.{} By:IvyB", version)
+        logger.info("Started AutoBooks Web V.{} By:IvyB on Host: {}", version, platform.node())
         monitor.ping(state='run',
-                     message=(f'AutoBooks Web by IvyB V.{version} \n'
+                     message=(f'AutoBooks Web by IvyB V.{version} on Host: {platform.node()} \n'
                               f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}'))
 
         # Attempt to read known files csv for checking books
@@ -236,8 +233,6 @@ def web_run():
                         web_odm_list = odm_list
                     else:
                         web_odm_list.extend(odm_list)
-                    print("ODM LIST")
-                    print(odm_list)
                     sleep(2)
                     # Write book data to csv
                     if os.path.isfile(csv_path):
@@ -248,22 +243,21 @@ def web_run():
                     logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
                     error_count += 1
         logger.info("AutoBooksWeb Complete")
-        print("WEB ODM LIST")
-        print(web_odm_list)
 
         # Process log file for Cronitor.
-        process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
-        monitor.ping(state='complete', message="".join(web_odm_list),
+        web_log = process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
+        monitor.ping(state='complete',
+                     message=f'{"".join(web_log)}',
                      metrics={'count': len(web_odm_list), 'error_count': error_count})
 
         # Call DL to process odm files from web
         if len(web_odm_list) != 0:
-            logger.info("Started AutoBooks V.{} By:IvyB", version)
+            logger.info("Started AutoBooks V.{} By:IvyB on Host: {}", version, platform.node())
             monitor.ping(state='run',
-                         message=f"AutoBooks by IvyB v.{version} \n"
-                                 f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
+                         message=f"AutoBooks by IvyB v.{version} on Host: {platform.node()} \n"
+                                 f"logfile: {LOG_FILENAME}\n out_dir: {config['out_folder']} \n"
                                  f"odm_list:{web_odm_list}")
-            process(web_odm_list)
+            good_odm_list, bad_odm_list = process(web_odm_list)
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, os.path.join(
                 script_dir, "downloads"))
@@ -280,7 +274,7 @@ def main_run():
     logger.info("Started AutoBooks V.{} By:IvyB", version)
     # Try to change to ODM folder
     try:
-        os.chdir(odm_dir)
+        os.chdir(config["odm_folder"])
     except FileNotFoundError:
         logger.critical("The provided .odm dir was not found, exiting")
         sys.exit(1)
@@ -288,7 +282,8 @@ def main_run():
         odm_list = glob.glob("*.odm")
         monitor.ping(state='run',
                      message=f"AutoBooks by IvyB v.{version} \n"
-                             f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
+                             f"logfile: {LOG_FILENAME}\n odm_dir: {config['odm_folder']} \n "
+                             f"out_dir: {config['out_folder']} \n"
                              f"odm_list:{odm_list}")
 
         # Check if any .odm files exist in odm_dir
@@ -298,10 +293,10 @@ def main_run():
             logger.critical("No .odm files found, exiting")
             sys.exit(1)
         else:
-            process(odm_list)
+            good_odm_list, bad_odm_list = process(odm_list)
             # Cleanup files
             m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list, odm_dir)
+            cleanup(m4blist, good_odm_list, config["odm_folder"])
             # Send complete event and log to Cronitor
             log_str = process_logfile(LOG_FILENAME, terms=(
                 "Downloading", "expired", "generating", "merged", "saved"))
