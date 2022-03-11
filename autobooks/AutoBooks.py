@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import shutil
 import sys
@@ -53,6 +54,8 @@ logger.configure(handlers=[
     {'sink': LOG_FILENAME,
      "format": redacting_formatter.format, "retention": 10, "rotation": "1 day"},
 ])
+logging.getLogger().setLevel('DEBUG')
+logging.getLogger().addHandler(InterceptHandler())
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
 
@@ -73,10 +76,11 @@ def process(odm_list):
     global error_count
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
-        if parser.get('DEFAULT', "test_args") == "True":
-            odmpy_args = ["odmpy", "dl", "--nobookfolder", x]
+        odmpy_args = ["odmpy", "dl", "--nobookfolder"]
+        if config['odmpy_test_args'] == "True":
+            odmpy_args.extend([x])
         else:
-            odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
+            odmpy_args.extend(["-c", "-m", "--mergeformat", "m4b", x])
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
@@ -141,6 +145,7 @@ def web_dl(df, session, base_url, name, book_list):
     df_out = pd.DataFrame()
     logger.info("Begin DL from library: {} ", name)
     book_count = 0
+
     if len(book_list) == 0:
         logger.warning("Can't find books skipped library: {}", name)
         error_count += 1
@@ -152,9 +157,11 @@ def web_dl(df, session, base_url, name, book_list):
             if id_query.empty is False:
                 logger.info('Skipped {} found in known books', book['title'])
             else:
+                # Save book info to dataframe
                 df_book = pd.DataFrame([[name, book['id'], book['title']]],
                                        columns=['library_name', 'book_id', 'book_title'])
                 df_out = pd.concat([df_out, df_book])
+                # Short wait then download ODM
                 sleep(0.5)
                 odm = session.get(f'{base_url}media/download/audiobook-mp3/{book["id"]}')
                 odm_filename = odm.url.split("/")[-1].split('?')[0]
@@ -166,6 +173,76 @@ def web_dl(df, session, base_url, name, book_list):
     logger.info("Finished downloading {} books from library {}",
                 book_count, name)
     return df_out
+
+
+# AutoBooks Web Code
+def web_run():
+    global error_count
+    if len(parser.sections()) == 0:
+        logger.critical("No libraries configured!")
+        sys.exit(1)
+    else:
+        logger.info("Started AutoBooks Web V.{} By:IvyB", version)
+        monitor.ping(state='run',
+                     message=(f'AutoBooks Web by IvyB V.{version} \n'
+                              f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}'))
+
+        # Attempt to read known files csv for checking books
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path, sep=",")
+        else:
+            # Failing above create an empty df for checking
+            df = pd.DataFrame({
+                'book_id': [''],
+            })
+        os.chdir(os.path.join(script_dir, "downloads"))
+
+        # For every library, open site, attempt sign in, and attempt download.
+        for i in range(0, library_count):
+            lib_conf = parser['library_' + str(i)]
+            logger.info("Started library {}", lib_conf['library_name'])
+            sleep(3)
+            session, base_url, library_name = web_login(lib_conf['library_subdomain'],
+                                                        lib_conf['card_number'],
+                                                        lib_conf['card_pin'],
+                                                        lib_conf['library_select'])
+            loans = session.get(f'{base_url}account/loans')
+            book_list = craft_booklist(loans)
+            if len(book_list) != 0:
+                df_out = web_dl(df, session, base_url, library_name, book_list)
+                sleep(2)
+                if os.path.isfile(csv_path):
+                    df_out.to_csv(csv_path, mode='a', index=False, header=False)
+                else:
+                    df_out.to_csv(csv_path, mode='w', index=False, header=True)
+            else:
+                logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
+        error_count += 1
+        logger.info("AutoBooksWeb Complete")
+        web_odm_list = glob.glob("*.odm")
+
+        # Process log file for Cronitor.
+        process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
+        monitor.ping(state='complete', message="".join(web_odm_list),
+                     metrics={'count': len(web_odm_list), 'error_count': error_count})
+
+        # Call DL to process odm files from web
+        if len(web_odm_list) != 0 and 4+5 == 10:
+            logger.info("Started AutoBooks V.{} By:IvyB", version)
+            monitor.ping(state='run',
+                         message=f"AutoBooks by IvyB v.{version} \n"
+                                 f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
+                                 f"odm_list:{web_odm_list}")
+            process(web_odm_list)
+            m4blist = glob.glob("*.m4b")
+            cleanup(m4blist, good_odm_list, os.path.join(
+                script_dir, "downloads"))
+            # Process log file for Cronitor
+            log_str = process_logfile(LOG_FILENAME, terms=(
+                "Downloading", "expired", "generating", "merged"))
+            # Send complete event and log to Cronitor
+            monitor.ping(state='complete', message=log_str,
+                         metrics={'count': len(web_odm_list), 'error_count': error_count})
 
 
 def main_run():
@@ -202,71 +279,5 @@ def main_run():
                          metrics={'count': len(odm_list), 'error_count': error_count})
 
 
-# AutoBooks Web Code
-def web_run():
-    if len(parser.sections()) == 0:
-        logger.critical("No libraries configured!")
-        sys.exit(1)
-    else:
-        logger.info("Started AutoBooks Web V.{} By:IvyB", version)
-        monitor.ping(state='run',
-                     message=(f'AutoBooks Web by IvyB V.{version} \n'
-                              f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}'))
-
-        # Attempt to read known files csv for checking books
-        if os.path.exists(csv_path):
-            df = pd.read_csv(csv_path, sep=",")
-        else:
-            # Failing above create an empty df for checking
-            df = pd.DataFrame({
-                'book_id': book_id_list,
-            })
-        os.chdir(os.path.join(script_dir, "downloads"))
-
-        # For every library, open site, attempt sign in, and attempt download.
-        for i in range(0, library_count):
-            lib_conf = parser['library_' + str(i)]
-            logger.info("Started library {}", lib_conf['library_name'])
-            sleep(3)
-            session, base_url, library_name = web_login(lib_conf['library_subdomain'],
-                                                        lib_conf['card_number'],
-                                                        lib_conf['card_pin'],
-                                                        lib_conf['library_select'])
-            loans = session.get(f'{base_url}account/loans')
-            book_list = craft_booklist(loans)
-            df_out = web_dl(df, session, base_url, library_name, book_list)
-            sleep(2)
-            if os.path.exists(csv_path) and not df_out.empty:
-                df_out.to_csv(csv_path, mode='a', index=False, header=False)
-            elif df_out:
-                df_out.to_csv(csv_path, mode='w', index=False, header=True)
-        logger.info("AutoBooksWeb Complete")
-        web_odm_list = glob.glob("*.odm")
-
-        # Process log file for Cronitor.
-        process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
-        monitor.ping(state='complete', message="".join(web_odm_list),
-                     metrics={'count': len(web_odm_list), 'error_count': error_count})
-
-        # Call DL to process odm files from web
-        if len(web_odm_list) != 0:
-            logger.info("Started AutoBooks V.{} By:IvyB", version)
-            monitor.ping(state='run',
-                         message=f"AutoBooks by IvyB v.{version} \n"
-                                 f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
-                                 f"odm_list:{web_odm_list}")
-            process(web_odm_list)
-            m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list, os.path.join(
-                script_dir, "downloads"))
-            # Process log file for Cronitor
-            log_str = process_logfile(LOG_FILENAME, terms=(
-                "Downloading", "expired", "generating", "merged"))
-            # Send complete event and log to Cronitor
-            monitor.ping(state='complete', message=log_str,
-                         metrics={'count': len(web_odm_list), 'error_count': error_count})
-        # return["\n".join(title_list), error_count]
-
-
-if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "True":
+if __name__ == "__main__" and config["test_run"] == "True":
     web_run()
