@@ -152,6 +152,7 @@ def web_dl(df, session, base_url, name, book_list):
     global error_count
     df_out = pd.DataFrame()
     logger.info("Begin DL from library: {} ", name)
+    odm_list = []
     book_count = 0
     if len(book_list) == 0:
         logger.warning("Can't find books skipped library: {}", name)
@@ -170,7 +171,7 @@ def web_dl(df, session, base_url, name, book_list):
                 odm_filename = odm.url.split("/")[-1].split('?')[0]
                 with open(odm_filename, "wb") as f:
                     f.write(odm.content)
-                print(odm.content)
+                odm_list.append(odm_filename)
                 print(odm_filename)
                 # Save book info to dataframe
                 df_book = pd.DataFrame([[name, book['id'], book['title'], odm_filename]],
@@ -180,12 +181,13 @@ def web_dl(df, session, base_url, name, book_list):
     sleep(1)
     logger.info("Finished downloading {} books from library {}",
                 book_count, name)
-    return df_out
+    return df_out, odm_list
 
 
 # AutoBooks Web Code
 def web_run():
     global error_count
+    web_odm_list = []
     if len(parser.sections()) == 0:
         logger.critical("No libraries configured!")
         sys.exit(1)
@@ -220,7 +222,14 @@ def web_run():
             if loans.status_code == 200:
                 book_list = craft_booklist(loans)
                 if len(book_list) != 0:
-                    df_out = web_dl(df, session, base_url, ils_name, book_list)
+                    df_out, odm_list = web_dl(df, session, base_url, ils_name, book_list)
+                    if web_odm_list == [] and odm_list != []:
+                        web_odm_list = odm_list
+                    else:
+                        web_odm_list.extend(odm_list)
+                    print(odm_list)
+                    print("Web:")
+                    print(web_odm_list)
                     sleep(2)
                     if os.path.isfile(csv_path):
                         df_out.to_csv(csv_path, mode='a', index=False, header=False)
@@ -230,7 +239,8 @@ def web_run():
                     logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
                     error_count += 1
         logger.info("AutoBooksWeb Complete")
-        web_odm_list = glob.glob("*.odm")
+        print(web_odm_list)
+        #web_odm_list = glob.glob("*.odm")
 
         # Process log file for Cronitor.
         process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
