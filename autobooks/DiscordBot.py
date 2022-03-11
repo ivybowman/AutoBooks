@@ -23,7 +23,7 @@ async def on_ready():
 
 
 @bot.command(name='web')
-async def hello(ctx):
+async def web(ctx):
     # Send starting embed and running web
     embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....",
                                 description=f"V.{version} \n Logfile: {LOG_FILENAME}", color=0xFFAFCC)
