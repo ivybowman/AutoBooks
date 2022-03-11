@@ -22,7 +22,7 @@ setup(
         ]
     },
     install_requires=['odmpy @ git+https://git@github.com/ping/odmpy.git', "cronitor", "pandas", "discord.py",
-                      "selenium", "requests", "loguru"],
+                      "selenium", "requests", "loguru", "lxml"],
     include_package_data=True,
     platforms="any",
     keywords=['python', 'AutoBooks'],

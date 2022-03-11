@@ -118,32 +118,20 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
-# Function for login
-def web_login(driver, name, card_num, pin, select):
-    global error_count
-    logger.info("Logging into library: {}", name)
-    # Attempt selecting library from dropdown
-    if select != "False":
-        select_box = driver.find_element(
-            By.XPATH, '//input[@id="signin-options"]')
-        webdriver.ActionChains(driver).move_to_element(
-            select_box).click().send_keys(select).perform()
-        sleep(1)
-        webdriver.ActionChains(driver).send_keys(
-            Keys.ARROW_DOWN).send_keys(Keys.RETURN).perform()
-    # Attempt sending card number
-    try:
-        driver.find_element(By.ID, "username").send_keys(card_num)
-    except selenium.common.exceptions.NoSuchElementException:
-        logger.critical("Can't find card number field skipped library {}", name)
-        error_count += 1
-    # Attempt sending pin Note:Some pages don't have pin input
-    if pin != "False":
-        driver.find_element(By.ID, "password").send_keys(pin)
-    driver.find_element(
-        By.CSS_SELECTOR, "button.signin-button.button.secondary").click()
-    sleep(5)
-
+def login(card_num, pin):
+    x = 0
+    login_session = requests.Session()
+    box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
+    login_form = parse_form(box, "loginForms")
+    auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone', params=params,
+                              data={
+                                  'ilsName': login_form['forms'][x]['ilsName'],
+                                  'authType': 'Local',
+                                  'libraryName': '',
+                                  'username': card_num,
+                                  'password': pin
+                              })
+    return login_session, auth.url, login_form['forms'][x]['ilsName']
 
 # Function to download loans from OverDrive page
 def web_dl(driver, df, name):
@@ -235,22 +223,6 @@ def web_run():
                      message=(f'AutoBooks Web by IvyB V.{version} \n'
                               f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}'))
 
-        # Configure WebDriver options
-        options = Options()
-        prefs = {
-            "download.default_directory": os.path.join(script_dir, "downloads"),
-            "download.prompt_for_download": False,
-            "download.directory_upgrade": True
-        }
-        options.add_argument('user-data-dir=' +
-                             os.path.join(script_dir, "profile"))
-        # Headless mode check
-        if parser.get('DEFAULT', "web_headless") == "True":
-            options.add_argument('--headless')
-            options.add_argument('--disable-gpu')
-        options.add_experimental_option('prefs', prefs)
-        driver = webdriver.Chrome(options=options)
-
         # Attempt to read known files csv for checking books
         if os.path.exists(csv_path):
             df = pd.read_csv(csv_path, sep=",")
@@ -267,8 +239,6 @@ def web_run():
             library_subdomain = parser.get(library_index, "library_subdomain")
             library_name = parser.get(library_index, "library_name")
             logger.info("Started library {}", library_name)
-            url = "https://" + library_subdomain + ".overdrive.com/"
-            driver.get(url + "account/loans")
             sleep(3)
             # Check signed in status and either sign in or move on
             if "/account/ozone/sign-in" in driver.current_url:

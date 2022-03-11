@@ -1,5 +1,5 @@
 import logging
-
+import lxml.etree
 from loguru import logger
 
 
@@ -45,3 +45,30 @@ def process_logfile(logfile, terms=None):
             if any(term in line for term in terms):
                 log_list.append(line)
         return "".join(log_list)
+
+
+def parse_form(box, sort):
+    form_dict = {}
+    txt = lxml.etree.HTML(box.content)
+    js = str(txt.xpath(f"//script[contains(text(), 'window.OverDrive.{sort} =')]/text()")[0]).strip()
+    split_1 = js.split(sep=" = ")
+    for i in range(0, len(split_1)):
+        if "window.OverDrive." + sort in split_1[i]:
+            form_dict = split_1[i + 1].strip().split(';')[0]
+            break
+    return dict(json.loads(form_dict))
+
+def craft_booklist(loans_page):
+    book_dict = parse_form(loans_page, "mediaItems")
+    book_list_parse = []
+    for i in book_dict:
+        book_format = book_dict[i]['overDriveFormat']['id']
+        book_title = book_dict[i]['title']
+        book_id = book_dict[i]['id']
+        book_parse = {
+            'id': book_id,
+            'title': book_title,
+            'format': book_format,
+        }
+        book_list_parse.append(book_parse)
+    return book_list_parse
