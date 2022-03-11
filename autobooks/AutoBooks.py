@@ -30,7 +30,7 @@ if os.path.exists(script_dir):
 else:
     os.mkdir(script_dir)
     main_conf = requests.get(
-        'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
+        'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.ini')
     folders = ['log', 'downloads', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
@@ -53,8 +53,8 @@ logger.configure(handlers=[
     {'sink': LOG_FILENAME,
      "format": redacting_formatter.format, "retention": 10, "rotation": "1 day"},
 ])
-logging.getLogger().setLevel('DEBUG')
-logging.getLogger().addHandler(InterceptHandler())
+# logging.getLogger().setLevel('DEBUG')
+# logging.getLogger().addHandler(InterceptHandler())
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
 
@@ -124,8 +124,8 @@ def cleanup(m4b_list, odm_list, odm_folder):
 def web_login(subdomain, card_num, pin, select):
     login_session = requests.Session()
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
-    form_list = parse_form(box, "loginForms")
-    if len(form_list) == 0:
+    form_list = parse_form(box, "loginForms")['forms']
+    if len(form_list) == 1:
         x = 0
     else:
         for form in form_list:
@@ -133,7 +133,7 @@ def web_login(subdomain, card_num, pin, select):
                 print(select, "Matches: ", form['displayName'], "ils:", form['ilsName'])
                 x = form_list.index(form)
                 break
-
+    sleep(0.5)
     auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
                               params=(('forwardUrl', '/'),),
                               data={
@@ -143,6 +143,7 @@ def web_login(subdomain, card_num, pin, select):
                                   'username': card_num,
                                   'password': pin
                               })
+    # print("AUTH URL: ", auth.url)
     return auth.url, form_list[x]['ilsName'], login_session
 
 
@@ -152,7 +153,6 @@ def web_dl(df, session, base_url, name, book_list):
     df_out = pd.DataFrame()
     logger.info("Begin DL from library: {} ", name)
     book_count = 0
-
     if len(book_list) == 0:
         logger.warning("Can't find books skipped library: {}", name)
         error_count += 1
@@ -162,18 +162,20 @@ def web_dl(df, session, base_url, name, book_list):
             print("AudioBook Info: ", book['title'], "-", book['id'], "-", book['format'])
             id_query = df.query('book_id == ' + book['id'])
             if id_query.empty is False:
-                logger.info('Skipped {} found in known books', book['title'])
+                logger.info('Skipped "{}" found in known books', book['title'])
             else:
-                # Save book info to dataframe
-                df_book = pd.DataFrame([[name, book['id'], book['title']]],
-                                       columns=['library_name', 'book_id', 'book_title'])
-                df_out = pd.concat([df_out, df_book])
                 # Short wait then download ODM
                 sleep(0.5)
                 odm = session.get(f'{base_url}media/download/audiobook-mp3/{book["id"]}')
                 odm_filename = odm.url.split("/")[-1].split('?')[0]
+                with open(odm_filename, "wb") as f:
+                    f.write(odm.content)
                 print(odm.content)
                 print(odm_filename)
+                # Save book info to dataframe
+                df_book = pd.DataFrame([[name, book['id'], book['title'], odm_filename]],
+                                       columns=['ils_name', 'book_id', 'book_title', 'book_odm'])
+                df_out = pd.concat([df_out, df_book])
                 logger.info("Downloaded book: {} as {}", book['title'], odm_filename)
     sleep(1)
     logger.info("Finished downloading {} books from library {}",
@@ -212,18 +214,21 @@ def web_run():
                                                     lib_conf['card_number'],
                                                     lib_conf['card_pin'],
                                                     lib_conf['library_select'], )
+            if not base_url.endswith('/'):
+                base_url = base_url+'/'
             loans = session.get(f'{base_url}account/loans')
-            book_list = craft_booklist(loans)
-            if len(book_list) != 0 and 2 + 2 == 5:
-                df_out = web_dl(df, session, base_url, ils_name, book_list)
-                sleep(2)
-                if os.path.isfile(csv_path):
-                    df_out.to_csv(csv_path, mode='a', index=False, header=False)
+            if loans.status_code == 200:
+                book_list = craft_booklist(loans)
+                if len(book_list) != 0:
+                    df_out = web_dl(df, session, base_url, ils_name, book_list)
+                    sleep(2)
+                    if os.path.isfile(csv_path):
+                        df_out.to_csv(csv_path, mode='a', index=False, header=False)
+                    else:
+                        df_out.to_csv(csv_path, mode='w', index=False, header=True)
                 else:
-                    df_out.to_csv(csv_path, mode='w', index=False, header=True)
-            else:
-                logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
-        error_count += 1
+                    logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
+                    error_count += 1
         logger.info("AutoBooksWeb Complete")
         web_odm_list = glob.glob("*.odm")
 
