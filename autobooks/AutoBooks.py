@@ -4,7 +4,6 @@ import os
 import shutil
 import sys
 from configparser import ConfigParser
-from datetime import datetime
 from pathlib import Path
 from time import sleep
 from unittest.mock import patch
@@ -122,11 +121,19 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
-def web_login(subdomain, card_num, pin, select):
-    x = 0
+def web_login(subdomain):
     login_session = requests.Session()
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
     login_form = parse_form(box, "loginForms")
+    print(login_form)
+
+    return login_session, login_form['forms']
+
+
+def web_auth(login_session, subdomain, card_num, pin, select, x):
+    box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
+    login_form = parse_form(box, "loginForms")
+    print(login_form)
     auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
                               params=(('forwardUrl', '/'),),
                               data={
@@ -136,7 +143,7 @@ def web_login(subdomain, card_num, pin, select):
                                   'username': card_num,
                                   'password': pin
                               })
-    return login_session, auth.url, login_form['forms'][x]['ilsName']
+    return auth.url, login_form['forms'][x]['ilsName']
 
 
 # Function to download loans from OverDrive page
@@ -202,13 +209,14 @@ def web_run():
             lib_conf = parser['library_' + str(i)]
             logger.info("Started library {}", lib_conf['library_name'])
             sleep(3)
-            session, base_url, library_name = web_login(lib_conf['library_subdomain'],
-                                                        lib_conf['card_number'],
-                                                        lib_conf['card_pin'],
-                                                        lib_conf['library_select'])
+            session, login_form = web_login(lib_conf['library_subdomain'])
+            base_url, library_name = web_auth(lib_conf['library_subdomain'],
+                                              lib_conf['card_number'],
+                                              lib_conf['card_pin'],
+                                              lib_conf['library_select'], 0)
             loans = session.get(f'{base_url}account/loans')
             book_list = craft_booklist(loans)
-            if len(book_list) != 0:
+            if len(book_list) != 0 and 2+2 == 5:
                 df_out = web_dl(df, session, base_url, library_name, book_list)
                 sleep(2)
                 if os.path.isfile(csv_path):
@@ -227,7 +235,7 @@ def web_run():
                      metrics={'count': len(web_odm_list), 'error_count': error_count})
 
         # Call DL to process odm files from web
-        if len(web_odm_list) != 0 and 4+5 == 10:
+        if len(web_odm_list) != 0 and 4 + 5 == 10:
             logger.info("Started AutoBooks V.{} By:IvyB", version)
             monitor.ping(state='run',
                          message=f"AutoBooks by IvyB v.{version} \n"
