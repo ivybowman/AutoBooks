@@ -211,7 +211,7 @@ def web_run():
         for i in range(0, library_count):
             lib_conf = parser['library_' + str(i)]
             logger.info("Started library {}", lib_conf['library_name'])
-            sleep(3)
+            sleep(0.5)
             base_url, ils_name, session = web_login(lib_conf['library_subdomain'],
                                                     lib_conf['card_number'],
                                                     lib_conf['card_pin'],
@@ -219,18 +219,19 @@ def web_run():
             if not base_url.endswith('/'):
                 base_url = base_url+'/'
             loans = session.get(f'{base_url}account/loans')
+            sleep(0.5)
             if loans.status_code == 200:
                 book_list = craft_booklist(loans)
                 if len(book_list) != 0:
                     df_out, odm_list = web_dl(df, session, base_url, ils_name, book_list)
+                    sleep(0.5)
                     if web_odm_list == [] and odm_list != []:
                         web_odm_list = odm_list
                     else:
                         web_odm_list.extend(odm_list)
                     print(odm_list)
-                    print("Web:")
-                    print(web_odm_list)
                     sleep(2)
+                    # Write book data to csv
                     if os.path.isfile(csv_path):
                         df_out.to_csv(csv_path, mode='a', index=False, header=False)
                     else:
@@ -240,7 +241,6 @@ def web_run():
                     error_count += 1
         logger.info("AutoBooksWeb Complete")
         print(web_odm_list)
-        #web_odm_list = glob.glob("*.odm")
 
         # Process log file for Cronitor.
         process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
