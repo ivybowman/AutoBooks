@@ -125,13 +125,16 @@ def cleanup(m4b_list, odm_list, odm_folder):
 
 def web_login(subdomain, card_num, pin, select):
     login_session = requests.Session()
+    logger.info("Logging into: {}", subdomain)
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
+    logger.success('Fetched login page. Status Code: {}', box.status_code)
     form_list = parse_form(box, "loginForms")['forms']
     if len(form_list) == 1:
         x = 0
     else:
         for form in form_list:
             if select in form['displayName']:
+                logger.success('Matched Config: {} to {}', select, form['displayName'])
                 print(select, "Matches: ", form['displayName'], "ils:", form['ilsName'])
                 x = form_list.index(form)
                 break
@@ -145,6 +148,7 @@ def web_login(subdomain, card_num, pin, select):
                                   'username': card_num,
                                   'password': pin
                               })
+    logger.success("Logged into: {} Status Code: {} ", subdomain, auth.status_code)
     # print("AUTH URL: ", auth.url)
     return auth.url, form_list[x]['ilsName'], login_session
 
@@ -174,6 +178,7 @@ def web_dl(df, session, base_url, name, book_list):
                 with open(odm_filename, "wb") as f:
                     f.write(odm.content)
                 odm_list.append(odm_filename)
+                book_count += 1
                 print(odm_filename)
                 # Save book info to dataframe
                 df_book = pd.DataFrame([[name, book['id'], book['title'], odm_filename]],
@@ -212,7 +217,7 @@ def web_run():
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, library_count):
             lib_conf = parser['library_' + str(i)]
-            logger.info("Started library {}", lib_conf['library_name'])
+            logger.info("Begin Processing library: {}", lib_conf['library_name'])
             sleep(0.5)
             base_url, ils_name, session = web_login(lib_conf['library_subdomain'],
                                                     lib_conf['card_number'],
@@ -231,6 +236,7 @@ def web_run():
                         web_odm_list = odm_list
                     else:
                         web_odm_list.extend(odm_list)
+                    print("ODM LIST")
                     print(odm_list)
                     sleep(2)
                     # Write book data to csv
@@ -242,6 +248,7 @@ def web_run():
                     logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
                     error_count += 1
         logger.info("AutoBooksWeb Complete")
+        print("WEB ODM LIST")
         print(web_odm_list)
 
         # Process log file for Cronitor.
@@ -250,7 +257,7 @@ def web_run():
                      metrics={'count': len(web_odm_list), 'error_count': error_count})
 
         # Call DL to process odm files from web
-        if len(web_odm_list) != 0 and 4 + 5 == 10:
+        if len(web_odm_list) != 0:
             logger.info("Started AutoBooks V.{} By:IvyB", version)
             monitor.ping(state='run',
                          message=f"AutoBooks by IvyB v.{version} \n"
