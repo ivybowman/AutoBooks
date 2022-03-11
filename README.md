@@ -5,7 +5,8 @@
 
 # Important Disclaimer
 
-The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, in order for use with your preferred audiobook player during the loan period.
+The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, only
+for personal use with your preferred audiobook player during the loan period.
 
 # Features
 
