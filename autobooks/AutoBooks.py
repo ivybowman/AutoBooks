@@ -121,33 +121,29 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
-def web_login(subdomain):
+def web_login(subdomain, card_num, pin, select):
     login_session = requests.Session()
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
-    login_form = parse_form(box, "loginForms")
-    print(login_form)
-
-    return login_session, login_form['forms']
-
-
-def web_auth(login_session, subdomain, card_num, pin, select, login_forms):
-    box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
-    x = 0
-    if len(login_forms) != 0:
-        for form in login_forms:
-            print(form['type'])
-            print(form['ilsName'])
+    form_list = parse_form(box, "loginForms")
+    if len(form_list) == 0:
+        x = 0
+    else:
+        for form in form_list:
+            if select in form['displayName']:
+                print(select, "Matches: ", form['displayName'], "ils:", form['ilsName'])
+                x = form_list.index(form)
+                break
 
     auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
                               params=(('forwardUrl', '/'),),
                               data={
-                                  'ilsName': login_forms[x]['ilsName'],
-                                  'authType': 'Local',
-                                  'libraryName': '',
+                                  'ilsName': form_list[x]['ilsName'],
+                                  'authType': form_list[x]['type'],
+                                  'libraryName': form_list[x]['displayName'],
                                   'username': card_num,
                                   'password': pin
                               })
-    return auth.url
+    return auth.url, form_list[x]['ilsName'], login_session
 
 
 # Function to download loans from OverDrive page
@@ -179,7 +175,6 @@ def web_dl(df, session, base_url, name, book_list):
                 print(odm.content)
                 print(odm_filename)
                 logger.info("Downloaded book: {} as {}", book['title'], odm_filename)
-
     sleep(1)
     logger.info("Finished downloading {} books from library {}",
                 book_count, name)
@@ -213,16 +208,14 @@ def web_run():
             lib_conf = parser['library_' + str(i)]
             logger.info("Started library {}", lib_conf['library_name'])
             sleep(3)
-            session, login_form = web_login(lib_conf['library_subdomain'])
-            base_url, library_name = web_auth(session, lib_conf['library_subdomain'],
-                                              lib_conf['card_number'],
-                                              lib_conf['card_pin'],
-                                              lib_conf['library_select'],
-                                              login_form['forms'])
+            base_url, ils_name, session = web_login(lib_conf['library_subdomain'],
+                                                    lib_conf['card_number'],
+                                                    lib_conf['card_pin'],
+                                                    lib_conf['library_select'], )
             loans = session.get(f'{base_url}account/loans')
             book_list = craft_booklist(loans)
-            if len(book_list) != 0 and 2+2 == 5:
-                df_out = web_dl(df, session, base_url, library_name, book_list)
+            if len(book_list) != 0 and 2 + 2 == 5:
+                df_out = web_dl(df, session, base_url, ils_name, book_list)
                 sleep(2)
                 if os.path.isfile(csv_path):
                     df_out.to_csv(csv_path, mode='a', index=False, header=False)
