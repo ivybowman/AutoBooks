@@ -7,7 +7,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from time import sleep
 from unittest.mock import patch
-
+from datetime import datetime
 import cronitor
 import odmpy.odm as odmpy
 import pandas as pd
@@ -42,7 +42,9 @@ else:
 
 # Logging Config
 LOG_PATH = os.path.join(script_dir, 'log')
-LOG_FILENAME = os.path.join(LOG_PATH, "AutoBooks.log")
+LOG_FILENAME = os.path.join(
+    script_dir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d}.log'.format(datetime.now()))
+
 patterns = ['[34m[1m', '[39m[22m', '[34m[22m', '[35m[22m']
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
 cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
@@ -51,7 +53,7 @@ redacting_formatter = RedactingFormatter(patterns=patterns, source_fmt=file_log_
 logger.configure(handlers=[
     {'sink': sys.stderr, "format": console_log_format},
     {'sink': LOG_FILENAME,
-     "format": redacting_formatter.format, "retention": 10, "rotation": "1 day"},
+     "format": redacting_formatter.format, "retention": 10},
 ])
 # logging.getLogger().setLevel('DEBUG')
 # logging.getLogger().addHandler(InterceptHandler())
