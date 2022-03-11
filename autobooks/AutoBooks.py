@@ -15,7 +15,7 @@ import requests
 import selenium
 from loguru import logger
 
-from utils import InterceptHandler, RedactingFormatter, process_logfile
+from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
 
 # Set Vars
 version = "0.3"  # Version number of script
@@ -24,6 +24,9 @@ good_odm_list, bad_odm_list, library_list, book_id_list, book_title_list, book_o
 ] for i in range(6))
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
+params = (
+    ('forwardUrl', '/'),
+)
 
 # Check paths, and if not found do first time setup
 if os.path.exists(script_dir):
@@ -118,7 +121,7 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
-def login(card_num, pin):
+def web_login(subdomain, card_num, pin, select):
     x = 0
     login_session = requests.Session()
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
@@ -133,6 +136,7 @@ def login(card_num, pin):
                               })
     return login_session, auth.url, login_form['forms'][x]['ilsName']
 
+'''
 # Function to download loans from OverDrive page
 def web_dl(driver, df, name):
     global error_count
@@ -176,7 +180,7 @@ def web_dl(driver, df, name):
         logger.info("Finished downloading {} books from library {}",
                     book_count, name)
     return ()
-
+'''
 
 def main_run():
     # AutoBooks
@@ -240,11 +244,10 @@ def web_run():
             library_name = parser.get(library_index, "library_name")
             logger.info("Started library {}", library_name)
             sleep(3)
-            # Check signed in status and either sign in or move on
-            if "/account/ozone/sign-in" in driver.current_url:
-                web_login(driver, library_name, parser.get(library_index, "card_number"),
-                          parser.get(library_index, "card_pin"), parser.get(library_index, "library_select"))
-            web_dl(driver, df, library_name)
+
+            session, base_url, library_name = web_login(library_subdomain, parser.get(library_index, "card_number"),
+                      parser.get(library_index, "card_pin"), parser.get(library_index, "library_select"))
+            # web_dl(driver, df, library_name)
             sleep(2)
             # Output book data to csv
         df_out = pd.DataFrame({

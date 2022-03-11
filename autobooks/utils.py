@@ -1,6 +1,7 @@
 import logging
 import lxml.etree
 from loguru import logger
+import json
 
 
 # Formatter to remove patterns from log output
@@ -57,6 +58,7 @@ def parse_form(box, sort):
             form_dict = split_1[i + 1].strip().split(';')[0]
             break
     return dict(json.loads(form_dict))
+
 
 def craft_booklist(loans_page):
     book_dict = parse_form(loans_page, "mediaItems")
