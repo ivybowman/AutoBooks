@@ -13,7 +13,6 @@ import cronitor
 import odmpy.odm as odmpy
 import pandas as pd
 import requests
-import selenium
 from loguru import logger
 
 script_dir = os.path.join(Path.home(), "AutoBooks")
@@ -22,9 +21,10 @@ script_dir = os.path.join(Path.home(), "AutoBooks")
 parser = ConfigParser()
 parser.read(os.path.join(script_dir, "autobooks.ini"))
 print(parser.sections())
+config = parser['DEFAULT']
+print(section['cronitor_apikey'])
 section = parser.default_section
-print(section.get('odm_folder'))
-print(parser)
+
 #print(config.keys())
 #odm_dir = parser.get("DEFAULT", "odm_folder")
 #out_dir = parser.get("DEFAULT", "out_folder")

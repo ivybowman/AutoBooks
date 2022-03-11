@@ -12,7 +12,6 @@ import cronitor
 import odmpy.odm as odmpy
 import pandas as pd
 import requests
-import selenium
 from loguru import logger
 
 from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
@@ -20,13 +19,10 @@ from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_f
 # Set Vars
 version = "0.3"  # Version number of script
 error_count = 0
-good_odm_list, bad_odm_list, library_list, book_id_list, book_title_list, book_odm_list = ([
-] for i in range(6))
+good_odm_list = []
+bad_odm_list = []
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
-params = (
-    ('forwardUrl', '/'),
-)
 
 # Check paths, and if not found do first time setup
 if os.path.exists(script_dir):
@@ -35,7 +31,7 @@ else:
     os.mkdir(script_dir)
     main_conf = requests.get(
         'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
-    folders = ['log', 'downloads', 'profile', 'source_backup']
+    folders = ['log', 'downloads', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
     with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as local_file:
@@ -62,13 +58,14 @@ odmpy.logger.addHandler(InterceptHandler())
 
 # Read config file
 parser = ConfigParser()
-parser.read(os.path.join(script_dir, "autobooks.conf"))
-odm_dir = parser.get("DEFAULT", "odm_folder")
-out_dir = parser.get("DEFAULT", "out_folder")
+parser.read(os.path.join(script_dir, "autobooks.ini"))
+config = parser['DEFAULT']
+odm_dir = config["odm_folder"]
+out_dir = config["out_folder"]
 library_count = len(parser.sections())
 # Cronitor Setup https://cronitor.io/
-cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")
-monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_main"))
+cronitor.api_key = config['cronitor_apikey']
+monitor = cronitor.Monitor(config['cronitor_monitor'])
 
 
 # Function to process the books.
@@ -126,7 +123,8 @@ def web_login(subdomain, card_num, pin, select):
     login_session = requests.Session()
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
     login_form = parse_form(box, "loginForms")
-    auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone', params=params,
+    auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
+                              params=(('forwardUrl', '/'),),
                               data={
                                   'ilsName': login_form['forms'][x]['ilsName'],
                                   'authType': 'Local',
@@ -136,51 +134,39 @@ def web_login(subdomain, card_num, pin, select):
                               })
     return login_session, auth.url, login_form['forms'][x]['ilsName']
 
-'''
+
 # Function to download loans from OverDrive page
-def web_dl(driver, df, name):
+def web_dl(df, session, base_url, name, book_list):
     global error_count
-    # Gather all book title elements and check if any found
-    books = driver.find_elements(By.XPATH, '//a[@tabindex="0"][@role="link"]')
-    if len(books) == 0:
+    df_out = pd.DataFrame()
+    logger.info("Begin DL from library: {} ", name)
+    book_count = 0
+    if len(book_list) == 0:
         logger.warning("Can't find books skipped library: {}", name)
         error_count += 1
-        return ()
-    else:
-        logger.info("Begin DL from library: {} ", name)
-        book_count = 0
-        for i in books:
-            # Fetch info about the book
-            book_url = i.get_attribute('href')
-            book_info = i.get_attribute('aria-label')
-            book_info_split = book_info.split(". Audiobook. Expires in")
-            book_dl_url = book_url.replace(
-                '/media/', '/media/download/audiobook-mp3/')
-            book_id = int(''.join(filter(str.isdigit, book_url)))
-            book_title = book_info_split[0]
+        return df_out
+    for book in book_list:
+        if book['format'] != "ebook-overdrive":
+            print("AudioBook Info: ", book['title'], "-", book['id'], "-", book['format'])
+            id_query = df.query('book_id == ' + book['id'])
+            if id_query.empty is False:
+                logger.info('Skipped {} found in known books', book['title'])
+            else:
+                df_book = pd.DataFrame([[name, book['id'], book['title']]],
+                                       columns=['library_name', 'book_id', 'book_title'])
+                df_out = pd.concat([df_out, df_book])
+                sleep(0.5)
+                odm = session.get(f'{base_url}media/download/audiobook-mp3/{book["id"]}')
+                odm_filename = odm.url.split("/")[-1].split('?')[0]
+                print(odm.content)
+                print(odm_filename)
+                logger.info("Downloaded book: {} as {}", book['title'], odm_filename)
 
-            # Check if found book is a not known audiobook
-            if "Audiobook." in book_info:
-                if str(book_id) in df['book_id'].to_string():
-                    logger.info('Skipped {} found in known books', book_title)
-                else:
-                    # Download book
-                    driver.get(book_dl_url)
-                    logger.info("Downloaded book: {}", book_title)
-                    book_odm = max(glob.glob("*.odm"), key=os.path.getmtime)
-                    book_count += 1
+    sleep(1)
+    logger.info("Finished downloading {} books from library {}",
+                book_count, name)
+    return df_out
 
-                    # Add book data to vars
-                    library_list.append(name)
-                    book_id_list.append(book_id)
-                    book_title_list.append(book_title)
-                    book_odm_list.append(book_odm)
-            sleep(1)
-        sleep(1)
-        logger.info("Finished downloading {} books from library {}",
-                    book_count, name)
-    return ()
-'''
 
 def main_run():
     # AutoBooks
@@ -238,29 +224,22 @@ def web_run():
         os.chdir(os.path.join(script_dir, "downloads"))
 
         # For every library, open site, attempt sign in, and attempt download.
-        for i in range(0, len(parser.sections())):
-            library_index = 'library_' + str(i)
-            library_subdomain = parser.get(library_index, "library_subdomain")
-            library_name = parser.get(library_index, "library_name")
-            logger.info("Started library {}", library_name)
+        for i in range(0, library_count):
+            lib_conf = parser['library_' + str(i)]
+            logger.info("Started library {}", lib_conf['library_name'])
             sleep(3)
-
-            session, base_url, library_name = web_login(library_subdomain, parser.get(library_index, "card_number"),
-                      parser.get(library_index, "card_pin"), parser.get(library_index, "library_select"))
-            # web_dl(driver, df, library_name)
+            session, base_url, library_name = web_login(lib_conf['library_subdomain'],
+                                                        lib_conf['card_number'],
+                                                        lib_conf['card_pin'],
+                                                        lib_conf['library_select'])
+            loans = session.get(f'{base_url}account/loans')
+            book_list = craft_booklist(loans)
+            df_out = web_dl(df, session, base_url, library_name, book_list)
             sleep(2)
-            # Output book data to csv
-        df_out = pd.DataFrame({
-            'library_name': library_list,
-            'book_id': book_id_list,
-            'book_title': book_title_list,
-            'book_odm': book_odm_list
-        })
-        if os.path.exists(csv_path):
-            df_out.to_csv(csv_path, mode='a', index=False, header=False)
-        else:
-            df_out.to_csv(csv_path, mode='w', index=False, header=True)
-        driver.close()
+            if os.path.exists(csv_path) and not df_out.empty:
+                df_out.to_csv(csv_path, mode='a', index=False, header=False)
+            elif df_out:
+                df_out.to_csv(csv_path, mode='w', index=False, header=True)
         logger.info("AutoBooksWeb Complete")
         web_odm_list = glob.glob("*.odm")
 
