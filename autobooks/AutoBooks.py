@@ -130,20 +130,24 @@ def web_login(subdomain):
     return login_session, login_form['forms']
 
 
-def web_auth(login_session, subdomain, card_num, pin, select, x):
+def web_auth(login_session, subdomain, card_num, pin, select, login_forms):
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
-    login_form = parse_form(box, "loginForms")
-    print(login_form)
+    x = 0
+    if len(login_forms) != 0:
+        for form in login_forms:
+            print(form['type'])
+            print(form['ilsName'])
+
     auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
                               params=(('forwardUrl', '/'),),
                               data={
-                                  'ilsName': login_form['forms'][x]['ilsName'],
+                                  'ilsName': login_forms[x]['ilsName'],
                                   'authType': 'Local',
                                   'libraryName': '',
                                   'username': card_num,
                                   'password': pin
                               })
-    return auth.url, login_form['forms'][x]['ilsName']
+    return auth.url
 
 
 # Function to download loans from OverDrive page
@@ -210,10 +214,11 @@ def web_run():
             logger.info("Started library {}", lib_conf['library_name'])
             sleep(3)
             session, login_form = web_login(lib_conf['library_subdomain'])
-            base_url, library_name = web_auth(lib_conf['library_subdomain'],
+            base_url, library_name = web_auth(session, lib_conf['library_subdomain'],
                                               lib_conf['card_number'],
                                               lib_conf['card_pin'],
-                                              lib_conf['library_select'], 0)
+                                              lib_conf['library_select'],
+                                              login_form['forms'])
             loans = session.get(f'{base_url}account/loans')
             book_list = craft_booklist(loans)
             if len(book_list) != 0 and 2+2 == 5:
