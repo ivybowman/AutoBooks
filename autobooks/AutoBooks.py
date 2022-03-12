@@ -242,6 +242,7 @@ def web_run():
                 else:
                     logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
                     error_count += 1
+            session.close()
         logger.info("AutoBooksWeb Complete")
 
         # Process log file for Cronitor.
