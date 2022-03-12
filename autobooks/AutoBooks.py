@@ -18,7 +18,7 @@ from loguru import logger
 from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
 
 # Set Vars
-version = "0.3"  # Version number of script
+version = "0.4"  # Version number of script
 error_count = 0
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
