@@ -7,13 +7,10 @@ import discord
 import pandas as pd
 from discord.ext import commands
 
-from AutoBooks import web_run, main_run, version, script_dir, parser, csv_path, LOG_FILENAME, logger
+from AutoBooks import web_run, main_run, version, script_dir, config, csv_path, LOG_FILENAME, logger
 
 # Bot Settings
-try:
-    token = parser.get("DEFAULT", "discord_bot_token")
-except KeyError:
-    logger.critical("Bot token field not found in config file, exiting.")
+token = config["discord_bot_token"]
 bot = commands.Bot(command_prefix='?')
 
 
@@ -72,7 +69,7 @@ async def hello(ctx):
     try:
         df = pd.read_csv(csv_path, sep=",")
         embed_var = discord.Embed(title="Autobooks Known Books",
-                                  description=df['audiobook_title'].to_string(index=False), color=0xFFAFCC)
+                                  description=df['book_title'].to_string(index=False), color=0xFFAFCC)
         embed_var.set_footer(text="OS: " + platform.platform() + " Host: " + os.uname())
         await ctx.channel.send(embed=embed_var)
     except FileNotFoundError:

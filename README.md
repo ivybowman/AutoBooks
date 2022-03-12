@@ -10,8 +10,8 @@ for personal use with your preferred audiobook player during the loan period.
 
 # Features
 
-- AutoBooks Web: Uses selenium and chromedriver to download the odm files from overdrive without user interaction. 
-- Uses odmpy to fulfill and convert odm files to chapterized m4b audiobooks.
+- AutoBooks Web: Uses requests to download odm files.
+- Uses odmpy to fulfill and convert odm files to m4b audiobooks with chapters.
 - Moves the generated audiobooks to a chosen folder.
 - Backs up the download files in case you need to re-download the books.
 - Logs to console and timestamped logfile.
@@ -20,7 +20,7 @@ for personal use with your preferred audiobook player during the loan period.
 
 # Prerequisites
 
-- Tools: git, ffmpeg, odmpy, chromedriver (Installed in setup guide.)
+- Tools: git, ffmpeg, odmpy (Installed in setup guide.)
 - Accounts: [Cronitor](https://cronitor.io/) For script monitoring, optional but will display errors if not setup.
 
 # Links

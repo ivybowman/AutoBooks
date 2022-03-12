@@ -1,5 +1,6 @@
 import glob
 import os
+import platform
 import shutil
 import sys
 from configparser import ConfigParser
@@ -12,20 +13,13 @@ import cronitor
 import odmpy.odm as odmpy
 import pandas as pd
 import requests
-import selenium
 from loguru import logger
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 
-from utils import InterceptHandler, RedactingFormatter, process_logfile
+from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
 
 # Set Vars
-version = "0.3"  # Version number of script
+version = "0.4"  # Version number of script
 error_count = 0
-good_odm_list, bad_odm_list, library_list, book_id_list, book_title_list, book_odm_list = ([
-] for i in range(6))
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
 
@@ -35,8 +29,8 @@ if os.path.exists(script_dir):
 else:
     os.mkdir(script_dir)
     main_conf = requests.get(
-        'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.conf')
-    folders = ['log', 'downloads', 'profile', 'source_backup']
+        'https://raw.githubusercontent.com/ivybowman/AutoBooks/main/autobooks_template.ini')
+    folders = ['log', 'downloads', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
     with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as local_file:
@@ -47,7 +41,9 @@ else:
 
 # Logging Config
 LOG_PATH = os.path.join(script_dir, 'log')
-LOG_FILENAME = os.path.join(LOG_PATH, "AutoBooks.log")
+LOG_FILENAME = os.path.join(
+    script_dir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d}.log'.format(datetime.now()))
+
 patterns = ['[34m[1m', '[39m[22m', '[34m[22m', '[35m[22m']
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
 cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
@@ -56,38 +52,41 @@ redacting_formatter = RedactingFormatter(patterns=patterns, source_fmt=file_log_
 logger.configure(handlers=[
     {'sink': sys.stderr, "format": console_log_format},
     {'sink': LOG_FILENAME,
-     "format": redacting_formatter.format, "retention": 10, "rotation": "1 day"},
+     "format": redacting_formatter.format, "retention": 10},
 ])
+# logging.getLogger().setLevel('DEBUG')
+# logging.getLogger().addHandler(InterceptHandler())
 odmpy.logger.handlers.clear()
 odmpy.logger.addHandler(InterceptHandler())
 
 # Read config file
 parser = ConfigParser()
-parser.read(os.path.join(script_dir, "autobooks.conf"))
-odm_dir = parser.get("DEFAULT", "odm_folder")
-out_dir = parser.get("DEFAULT", "out_folder")
+parser.read(os.path.join(script_dir, "autobooks.ini"))
+config = parser['DEFAULT']
 library_count = len(parser.sections())
+
 # Cronitor Setup https://cronitor.io/
-cronitor.api_key = parser.get("DEFAULT", "cronitor_apikey")
-monitor = cronitor.Monitor(parser.get("DEFAULT", "cronitor_name_main"))
+cronitor.api_key = config['cronitor_apikey']
+monitor = cronitor.Monitor(config['cronitor_monitor'])
 
 
 # Function to process the books.
 def process(odm_list):
     global error_count
+    good_odm_list = []
+    bad_odm_list = []
+    odmpy_args = ["odmpy", "dl", "--nobookfolder"]
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
-        if parser.get('DEFAULT', "test_args") == "True":
-            odmpy_args = ["odmpy", "dl", "--nobookfolder", x]
+        if config['odmpy_test_args'] == "True":
+            odmpy_args.extend([x])
         else:
-            odmpy_args = ["odmpy", "dl", "-c", "-m", "--mergeformat", "m4b", "--nobookfolder", x]
+            odmpy_args.extend(["-c", "-m", "--mergeformat", "m4b", x])
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
-            except FileNotFoundError:
-                logger.error("Could not find odm file {}", x)
-            except FileExistsError:
-                logger.error("FileAlreadyExists, likely from m4b creation attempt")
+            except(FileNotFoundError, FileExistsError) as e:
+                logger.error("Error starting odm {} Message: {}", x, e)
             except SystemExit as e:
                 bad_odm_list.append(x)
                 if os.path.isfile("cover.jpg"):
@@ -96,6 +95,7 @@ def process(odm_list):
             else:
                 good_odm_list.append(x)
     logger.info("Book Processing Finished")
+    return good_odm_list, bad_odm_list
 
 
 # Function to clean up in and out files.
@@ -103,11 +103,11 @@ def cleanup(m4b_list, odm_list, odm_folder):
     global error_count
     # Move m4b files to out_dir
     for x in m4b_list:
-        if os.path.isfile(os.path.join(out_dir + x)):
+        if os.path.isfile(os.path.join(config["out_folder"] + x)):
             logger.error("Book {} already exists in out dir skipped", x)
             error_count += 1
         else:
-            shutil.move(os.path.join(odm_folder, x), os.path.join(out_dir, x))
+            shutil.move(os.path.join(odm_folder, x), os.path.join(config["out_folder"], x))
             logger.info("Moved book {} to out_dir", x)
     # Backup source files
     for x in odm_list:
@@ -122,138 +122,85 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
-# Function for login
-def web_login(driver, name, card_num, pin, select):
-    global error_count
-    logger.info("Logging into library: {}", name)
-    # Attempt selecting library from dropdown
-    if select != "False":
-        select_box = driver.find_element(
-            By.XPATH, '//input[@id="signin-options"]')
-        webdriver.ActionChains(driver).move_to_element(
-            select_box).click().send_keys(select).perform()
-        sleep(1)
-        webdriver.ActionChains(driver).send_keys(
-            Keys.ARROW_DOWN).send_keys(Keys.RETURN).perform()
-    # Attempt sending card number
-    try:
-        driver.find_element(By.ID, "username").send_keys(card_num)
-    except selenium.common.exceptions.NoSuchElementException:
-        logger.critical("Can't find card number field skipped library {}", name)
-        error_count += 1
-    # Attempt sending pin Note:Some pages don't have pin input
-    if pin != "False":
-        driver.find_element(By.ID, "password").send_keys(pin)
-    driver.find_element(
-        By.CSS_SELECTOR, "button.signin-button.button.secondary").click()
-    sleep(5)
+def web_login(subdomain, card_num, pin, select):
+    login_session = requests.Session()
+    logger.info("Logging into: {}", subdomain)
+    box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
+    logger.success('Fetched login page. Status Code: {}', box.status_code)
+    form_list = parse_form(box, "loginForms")['forms']
+    x = 0
+    if len(form_list) != 1:
+        for form in form_list:
+            if select in form['displayName']:
+                logger.success('Matched Config: {} to {}', select, form['displayName'])
+                print(select, "Matches: ", form['displayName'], "ils:", form['ilsName'])
+                x = form_list.index(form)
+                break
+    sleep(0.5)
+    auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
+                              params=(('forwardUrl', '/'),),
+                              data={
+                                  'ilsName': form_list[x]['ilsName'],
+                                  'authType': form_list[x]['type'],
+                                  'libraryName': form_list[x]['displayName'],
+                                  'username': card_num,
+                                  'password': pin
+                              })
+    logger.success("Logged into: {} Status Code: {} ", subdomain, auth.status_code)
+    # print("AUTH URL: ", auth.url)
+    return auth.url, form_list[x]['ilsName'], login_session
 
 
 # Function to download loans from OverDrive page
-def web_dl(driver, df, name):
+def web_dl(df, session, base_url, name, book_list):
     global error_count
-    # Gather all book title elements and check if any found
-    books = driver.find_elements(By.XPATH, '//a[@tabindex="0"][@role="link"]')
-    if len(books) == 0:
+    df_out = pd.DataFrame()
+    logger.info("Begin DL from library: {} ", name)
+    odm_list = []
+    book_count = 0
+    if len(book_list) == 0:
         logger.warning("Can't find books skipped library: {}", name)
         error_count += 1
-        return ()
-    else:
-        logger.info("Begin DL from library: {} ", name)
-        book_count = 0
-        for i in books:
-            # Fetch info about the book
-            book_url = i.get_attribute('href')
-            book_info = i.get_attribute('aria-label')
-            book_info_split = book_info.split(". Audiobook. Expires in")
-            book_dl_url = book_url.replace(
-                '/media/', '/media/download/audiobook-mp3/')
-            book_id = int(''.join(filter(str.isdigit, book_url)))
-            book_title = book_info_split[0]
-
-            # Check if found book is a not known audiobook
-            if "Audiobook." in book_info:
-                if str(book_id) in df['book_id'].to_string():
-                    logger.info('Skipped {} found in known books', book_title)
-                else:
-                    # Download book
-                    driver.get(book_dl_url)
-                    logger.info("Downloaded book: {}", book_title)
-                    book_odm = max(glob.glob("*.odm"), key=os.path.getmtime)
-                    book_count += 1
-
-                    # Add book data to vars
-                    library_list.append(name)
-                    book_id_list.append(book_id)
-                    book_title_list.append(book_title)
-                    book_odm_list.append(book_odm)
-            sleep(1)
-        sleep(1)
-        logger.info("Finished downloading {} books from library {}",
-                    book_count, name)
-    return ()
-
-
-def main_run():
-    # AutoBooks
-    logger.info("Started AutoBooks V.{} By:IvyB", version)
-    # Try to change to ODM folder
-    try:
-        os.chdir(odm_dir)
-    except FileNotFoundError:
-        logger.critical("The provided .odm dir was not found, exiting")
-        sys.exit(1)
-    else:
-        odm_list = glob.glob("*.odm")
-        monitor.ping(state='run',
-                     message=f"AutoBooks by IvyB v.{version} \n"
-                             f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
-                             f"odm_list:{odm_list}")
-
-        # Check if any .odm files exist in odm_dir
-        if len(odm_list) == 0:
-            monitor.ping(state='fail', message='Error: No .odm files found, exiting',
-                         metrics={'error_count': error_count})
-            logger.critical("No .odm files found, exiting")
-            sys.exit(1)
-        else:
-            process(odm_list)
-            # Cleanup files
-            m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list, odm_dir)
-            # Send complete event and log to Cronitor
-            log_str = process_logfile(LOG_FILENAME, terms=(
-                "Downloading", "expired", "generating", "merged", "saved"))
-            monitor.ping(state='complete', message=log_str,
-                         metrics={'count': len(odm_list), 'error_count': error_count})
+        return df_out
+    for book in book_list:
+        if book['format'] != "ebook-overdrive":
+            print("AudioBook Info: ", book['title'], "-", book['id'], "-", book['format'])
+            id_query = df.query('book_id == ' + book['id'])
+            if id_query.empty is False:
+                logger.info('Skipped "{}" found in known books', book['title'])
+            else:
+                # Short wait then download ODM
+                sleep(0.5)
+                odm = session.get(f'{base_url}media/download/audiobook-mp3/{book["id"]}')
+                odm_filename = odm.url.split("/")[-1].split('?')[0]
+                with open(odm_filename, "wb") as f:
+                    f.write(odm.content)
+                odm_list.append(odm_filename)
+                book_count += 1
+                print(odm_filename)
+                # Save book info to dataframe
+                df_book = pd.DataFrame([[name, book['id'], book['title'], odm_filename]],
+                                       columns=['ils_name', 'book_id', 'book_title', 'book_odm'])
+                df_out = pd.concat([df_out, df_book])
+                logger.info("Downloaded book: {} as {}", book['title'], odm_filename)
+    sleep(1)
+    logger.info("Finished downloading {} books from library {}",
+                book_count, name)
+    return df_out, odm_list
 
 
 # AutoBooks Web Code
 def web_run():
+    global error_count
+    web_odm_list = []
     if len(parser.sections()) == 0:
         logger.critical("No libraries configured!")
         sys.exit(1)
     else:
-        logger.info("Started AutoBooks Web V.{} By:IvyB", version)
+        logger.info("Started AutoBooks Web V.{} By:IvyB on Host: {}", version, platform.node())
         monitor.ping(state='run',
-                     message=(f'AutoBooks Web by IvyB V.{version} \n'
+                     message=(f'AutoBooks Web by IvyB V.{version} on Host: {platform.node()} \n'
                               f'logfile: {LOG_FILENAME} \n LibraryCount: {str(library_count)}'))
-
-        # Configure WebDriver options
-        options = Options()
-        prefs = {
-            "download.default_directory": os.path.join(script_dir, "downloads"),
-            "download.prompt_for_download": False,
-            "download.directory_upgrade": True
-        }
-        options.add_argument('user-data-dir=' +
-                             os.path.join(script_dir, "profile"))
-        # Headless mode check
-        if parser.get('DEFAULT', "web_headless") == "True":
-            options.add_argument('--headless')
-            options.add_argument('--disable-gpu')
-        options.add_experimental_option('prefs', prefs)
-        driver = webdriver.Chrome(options=options)
 
         # Attempt to read known files csv for checking books
         if os.path.exists(csv_path):
@@ -261,53 +208,58 @@ def web_run():
         else:
             # Failing above create an empty df for checking
             df = pd.DataFrame({
-                'book_id': book_id_list,
+                'book_id': [''],
             })
         os.chdir(os.path.join(script_dir, "downloads"))
 
         # For every library, open site, attempt sign in, and attempt download.
-        for i in range(0, len(parser.sections())):
-            library_index = 'library_' + str(i)
-            library_subdomain = parser.get(library_index, "library_subdomain")
-            library_name = parser.get(library_index, "library_name")
-            logger.info("Started library {}", library_name)
-            url = "https://" + library_subdomain + ".overdrive.com/"
-            driver.get(url + "account/loans")
-            sleep(3)
-            # Check signed in status and either sign in or move on
-            if "/account/ozone/sign-in" in driver.current_url:
-                web_login(driver, library_name, parser.get(library_index, "card_number"),
-                          parser.get(library_index, "card_pin"), parser.get(library_index, "library_select"))
-            web_dl(driver, df, library_name)
-            sleep(2)
-            # Output book data to csv
-        df_out = pd.DataFrame({
-            'library_name': library_list,
-            'book_id': book_id_list,
-            'book_title': book_title_list,
-            'book_odm': book_odm_list
-        })
-        if os.path.exists(csv_path):
-            df_out.to_csv(csv_path, mode='a', index=False, header=False)
-        else:
-            df_out.to_csv(csv_path, mode='w', index=False, header=True)
-        driver.close()
+        for i in range(0, library_count):
+            lib_conf = parser['library_' + str(i)]
+            logger.info("Begin Processing library: {}", lib_conf['library_name'])
+            sleep(0.5)
+            base_url, ils_name, session = web_login(lib_conf['library_subdomain'],
+                                                    lib_conf['card_number'],
+                                                    lib_conf['card_pin'],
+                                                    lib_conf['library_select'], )
+            if not base_url.endswith('/'):
+                base_url = base_url + '/'
+            loans = session.get(f'{base_url}account/loans')
+            sleep(0.5)
+            if loans.status_code == 200:
+                book_list = craft_booklist(loans)
+                if len(book_list) != 0:
+                    df_out, odm_list = web_dl(df, session, base_url, ils_name, book_list)
+                    sleep(0.5)
+                    if web_odm_list == [] and odm_list != []:
+                        web_odm_list = odm_list
+                    else:
+                        web_odm_list.extend(odm_list)
+                    sleep(2)
+                    # Write book data to csv
+                    if os.path.isfile(csv_path):
+                        df_out.to_csv(csv_path, mode='a', index=False, header=False)
+                    else:
+                        df_out.to_csv(csv_path, mode='w', index=False, header=True)
+                else:
+                    logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
+                    error_count += 1
+            session.close()
         logger.info("AutoBooksWeb Complete")
-        web_odm_list = glob.glob("*.odm")
 
         # Process log file for Cronitor.
-        process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
-        monitor.ping(state='complete', message="".join(web_odm_list),
+        web_log = process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
+        monitor.ping(state='complete',
+                     message=f'{"".join(web_log)}',
                      metrics={'count': len(web_odm_list), 'error_count': error_count})
 
         # Call DL to process odm files from web
         if len(web_odm_list) != 0:
-            logger.info("Started AutoBooks V.{} By:IvyB", version)
+            logger.info("Started AutoBooks V.{} By:IvyB on Host: {}", version, platform.node())
             monitor.ping(state='run',
-                         message=f"AutoBooks by IvyB v.{version} \n"
-                                 f"logfile: {LOG_FILENAME}\n odm_dir: {odm_dir} \n out_dir: {out_dir} \n"
+                         message=f"AutoBooks by IvyB v.{version} on Host: {platform.node()} \n"
+                                 f"logfile: {LOG_FILENAME}\n out_dir: {config['out_folder']} \n"
                                  f"odm_list:{web_odm_list}")
-            process(web_odm_list)
+            good_odm_list, bad_odm_list = process(web_odm_list)
             m4blist = glob.glob("*.m4b")
             cleanup(m4blist, good_odm_list, os.path.join(
                 script_dir, "downloads"))
@@ -317,8 +269,42 @@ def web_run():
             # Send complete event and log to Cronitor
             monitor.ping(state='complete', message=log_str,
                          metrics={'count': len(web_odm_list), 'error_count': error_count})
-        # return["\n".join(title_list), error_count]
 
 
-if __name__ == "__main__" and parser.get('DEFAULT', "test_run") == "True":
+def main_run():
+    # AutoBooks
+    logger.info("Started AutoBooks V.{} By:IvyB", version)
+    # Try to change to ODM folder
+    try:
+        os.chdir(config["odm_folder"])
+    except FileNotFoundError:
+        logger.critical("The provided .odm dir was not found, exiting")
+        sys.exit(1)
+    else:
+        odm_list = glob.glob("*.odm")
+        monitor.ping(state='run',
+                     message=f"AutoBooks by IvyB v.{version} \n"
+                             f"logfile: {LOG_FILENAME}\n odm_dir: {config['odm_folder']} \n "
+                             f"out_dir: {config['out_folder']} \n"
+                             f"odm_list:{odm_list}")
+
+        # Check if any .odm files exist in odm_dir
+        if len(odm_list) == 0:
+            monitor.ping(state='fail', message='Error: No .odm files found, exiting',
+                         metrics={'error_count': error_count})
+            logger.critical("No .odm files found, exiting")
+            sys.exit(1)
+        else:
+            good_odm_list, bad_odm_list = process(odm_list)
+            # Cleanup files
+            m4blist = glob.glob("*.m4b")
+            cleanup(m4blist, good_odm_list, config["odm_folder"])
+            # Send complete event and log to Cronitor
+            log_str = process_logfile(LOG_FILENAME, terms=(
+                "Downloading", "expired", "generating", "merged", "saved"))
+            monitor.ping(state='complete', message=log_str,
+                         metrics={'count': len(odm_list), 'error_count': error_count})
+
+
+if __name__ == "__main__" and config["test_run"] == "True":
     web_run()
