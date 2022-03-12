@@ -1,13 +1,14 @@
 import glob
-import platform
 import os
+import platform
 import shutil
 import sys
 from configparser import ConfigParser
+from datetime import datetime
 from pathlib import Path
 from time import sleep
 from unittest.mock import patch
-from datetime import datetime
+
 import cronitor
 import odmpy.odm as odmpy
 import pandas as pd
@@ -221,7 +222,7 @@ def web_run():
                                                     lib_conf['card_pin'],
                                                     lib_conf['library_select'], )
             if not base_url.endswith('/'):
-                base_url = base_url+'/'
+                base_url = base_url + '/'
             loans = session.get(f'{base_url}account/loans')
             sleep(0.5)
             if loans.status_code == 200:
