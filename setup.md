@@ -40,7 +40,7 @@ Open a terminal window then follow the steps below.
 To install from the latest source run the following command.  
 `pip3 install git+https://git@github.com/ivybowman/autobooks.git --upgrade --force-reinstall`
 To install from a specific version run the following command.
-`pip3 install git+https://git@github.com/ivybowman/autobooks.git@v0.3-alpha --upgrade`
+`pip3 install git+https://git@github.com/ivybowman/autobooks.git@v0.4-beta --upgrade`
 To uninstall AutoBooks run the following command.  
 `pip3 uninstall autobooks`
 
