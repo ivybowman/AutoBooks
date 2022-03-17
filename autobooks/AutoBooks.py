@@ -15,7 +15,7 @@ import pandas as pd
 import requests
 from loguru import logger
 
-from utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
+from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
 
 # Set Vars
 version = "0.4"  # Version number of script

@@ -7,7 +7,7 @@ import discord
 import pandas as pd
 from discord.ext import commands
 
-from AutoBooks import web_run, main_run, version, script_dir, config, csv_path, LOG_FILENAME, logger
+from autobooks.AutoBooks import web_run, main_run, version, script_dir, config, csv_path, LOG_FILENAME, logger
 
 # Bot Settings
 token = config["discord_bot_token"]
