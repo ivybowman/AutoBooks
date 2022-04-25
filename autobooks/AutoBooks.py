@@ -82,7 +82,6 @@ def process(odm_list):
             odmpy_args.extend([x])
         else:
             odmpy_args.extend(["-c", "-m", "--mergeformat", "m4b", x])
-        print(odmpy_args)
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
