@@ -18,7 +18,7 @@ from loguru import logger
 from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
 
 # Set Vars
-version = "0.4"  # Version number of script
+version = "0.5"  # Version number of script
 error_count = 0
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
@@ -75,13 +75,14 @@ def process(odm_list):
     global error_count
     good_odm_list = []
     bad_odm_list = []
-    odmpy_args = ["odmpy", "dl", "--nobookfolder"]
     logger.info('Begin processing book list: {}', " ".join(odm_list))
     for x in odm_list:
+        odmpy_args = ["odmpy", "dl", "--nobookfolder"]
         if config['odmpy_test_args'] == "True":
             odmpy_args.extend([x])
         else:
             odmpy_args.extend(["-c", "-m", "--mergeformat", "m4b", x])
+        print(odmpy_args)
         with patch.object(sys, 'argv', odmpy_args):
             try:
                 odmpy.run()
@@ -307,4 +308,4 @@ def main_run():
 
 
 if __name__ == "__main__" and config["test_run"] == "True":
-    web_run()
+    main_run()
