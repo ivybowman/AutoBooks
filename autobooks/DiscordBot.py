@@ -7,7 +7,7 @@ import discord
 import pandas as pd
 from discord.ext import commands
 
-from autobooks.AutoBooks import web_run, main_run, version, script_dir, config, csv_path, LOG_FILENAME, logger
+from autobooks.AutoBooks import run, version, script_dir, config, csv_path, LOG_FILENAME, logger
 
 # Bot Settings
 token = config["discord_bot_token"]
@@ -19,16 +19,16 @@ async def on_ready():
     logger.info(f'{bot.user} has connected to Discord!')
 
 
-@bot.command(name='web')
+@bot.command(name='autobooks')
 async def web(ctx):
     # Send starting embed and running web
-    embed_start = discord.Embed(title="Running AutoBooks Web. This may take awhile....",
+    embed_start = discord.Embed(title="Running AutoBooks. This may take awhile....",
                                 description=f"V.{version} \n Logfile: {LOG_FILENAME}", color=0xFFAFCC)
     embed_start.set_image(url="https://raw.githubusercontent.com/ivybowman/AutoBooks/main/img/logo/small_pink.png")
     embed_start.set_footer(text="OS: " + platform.platform() + " Host: " + platform.node())
     await ctx.channel.send(embed=embed_start)
     web_info = ["test-data", "test-data2"]
-    web_run()
+    run()
 
     # Ending Embed
     embed_end = discord.Embed(title="AutoBooks Web Finished",
@@ -43,16 +43,6 @@ async def web(ctx):
     files2 = sorted(files, key=os.path.getmtime, reverse=True)
     print(files2[0])
     await ctx.channel.send(file=discord.File(files2[0]))
-
-
-@bot.command(name='main')
-async def hello(ctx):
-    embed_var = discord.Embed(title="Title", description="Desc", color=0xFFAFCC)
-    embed_var.add_field(name="Field1", value="hi", inline=False)
-    embed_var.add_field(name="Field2", value="hi2", inline=False)
-
-    await ctx.channel.send(embed=embed_var)
-    main_run()
 
 
 @bot.command(name='log')
