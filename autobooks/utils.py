@@ -74,3 +74,12 @@ def craft_booklist(loans_page):
         }
         book_list_parse.append(book_parse)
     return book_list_parse
+
+
+def query_login_form(form_list, select):
+    x = 0
+    if len(form_list) != 1:
+        for form, index in form_list:
+            if select in form['displayName']:
+                x = form_list.index(form)
+                return form_list[x]

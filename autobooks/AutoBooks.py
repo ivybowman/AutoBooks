@@ -15,7 +15,8 @@ import pandas as pd
 import requests
 from loguru import logger
 
-from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
+from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist, \
+    query_login_form
 
 # Set Vars
 version = "0.5"  # Version number of script
@@ -44,7 +45,7 @@ LOG_PATH = os.path.join(script_dir, 'log')
 LOG_FILENAME = os.path.join(
     script_dir, 'log', 'AutoBooks-{:%H-%M-%S_%m-%d}.log'.format(datetime.now()))
 
-patterns = ['[34m[1m', '[39m[22m', '[34m[22m', '[35m[22m']
+patterns = ['[34m[1m', '[39m[22m', '[34m[22m', '[35m[22m']  # Used to remove color codes.
 console_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {message}\n{exception}"
 cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
 file_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {extra[scrubbed]}\n{exception}"
@@ -122,37 +123,30 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
-def web_login(subdomain, card_num, pin, select):
+def login(library):
     login_session = requests.Session()
-    logger.info("Logging into: {}", subdomain)
-    box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
-    logger.success('Fetched login page. Status Code: {}', box.status_code)
+    logger.info("Logging into: {}", library["subdomain"])
+    box = login_session.get(f'https://{library["subdomain"]}.overdrive.com/account/ozone/sign-in?forward=%2F')
+    # logger.success('Fetched login page. Status Code: {}', box.status_code)
     form_list = parse_form(box, "loginForms")['forms']
-    x = 0
-    if len(form_list) != 1:
-        for form in form_list:
-            if select in form['displayName']:
-                logger.success('Matched Config: {} to {}', select, form['displayName'])
-                print(select, "Matches: ", form['displayName'], "ils:", form['ilsName'])
-                x = form_list.index(form)
-                break
+    login_form = query_login_form(form_list, library['select_box'])
     sleep(0.5)
-    auth = login_session.post(f'https://{subdomain}.overdrive.com/account/signInOzone',
+    auth = login_session.post(f'https://{library["subdomain"]}.overdrive.com/account/signInOzone',
                               params=(('forwardUrl', '/'),),
                               data={
-                                  'ilsName': form_list[x]['ilsName'],
-                                  'authType': form_list[x]['type'],
-                                  'libraryName': form_list[x]['displayName'],
-                                  'username': card_num,
-                                  'password': pin
+                                  'ilsName': login_form['ilsName'],
+                                  'authType': login_form['type'],
+                                  'libraryName': login_form['displayName'],
+                                  'username': library['card_number'],
+                                  'password': library['card_pin']
                               })
-    logger.success("Logged into: {} Status Code: {} ", subdomain, auth.status_code)
+    logger.success("Logged into: {} Status Code: {} ", library["subdomain"], auth.status_code)
     # print("AUTH URL: ", auth.url)
-    return auth.url, form_list[x]['ilsName'], login_session
+    return auth.url, login_form['ilsName'], login_session
 
 
 # Function to download loans from OverDrive page
-def web_dl(df, session, base_url, name, book_list):
+def download(df, session, base_url, name, book_list):
     global error_count
     df_out = pd.DataFrame()
     logger.info("Begin DL from library: {} ", name)
@@ -190,7 +184,7 @@ def web_dl(df, session, base_url, name, book_list):
 
 
 # AutoBooks Web Code
-def web_run():
+def run():
     global error_count
     web_odm_list = []
     if len(parser.sections()) == 0:
@@ -217,10 +211,13 @@ def web_run():
             lib_conf = parser['library_' + str(i)]
             logger.info("Begin Processing library: {}", lib_conf['library_name'])
             sleep(0.5)
-            base_url, ils_name, session = web_login(lib_conf['library_subdomain'],
-                                                    lib_conf['card_number'],
-                                                    lib_conf['card_pin'],
-                                                    lib_conf['library_select'], )
+            base_url, ils_name, session = login(lib_conf)
+            '''
+            base_url, ils_name, session = login(lib_conf['library_subdomain'],
+                                                lib_conf['card_number'],
+                                                lib_conf['card_pin'],
+                                                lib_conf['library_select'], )
+                                                '''
             if not base_url.endswith('/'):
                 base_url = base_url + '/'
             loans = session.get(f'{base_url}account/loans')
@@ -228,7 +225,7 @@ def web_run():
             if loans.status_code == 200:
                 book_list = craft_booklist(loans)
                 if len(book_list) != 0:
-                    df_out, odm_list = web_dl(df, session, base_url, ils_name, book_list)
+                    df_out, odm_list = download(df, session, base_url, ils_name, book_list)
                     sleep(0.5)
                     if web_odm_list == [] and odm_list != []:
                         web_odm_list = odm_list
@@ -252,11 +249,11 @@ def web_run():
                      message=f'{"".join(web_log)}',
                      metrics={'count': len(web_odm_list), 'error_count': error_count})
 
-        # Call DL to process odm files from web
+        # Process odm files from web
         if len(web_odm_list) != 0:
-            logger.info("Started AutoBooks V.{} By:IvyB on Host: {}", version, platform.node())
+            logger.info("Started Downloading Books")
             monitor.ping(state='run',
-                         message=f"AutoBooks by IvyB v.{version} on Host: {platform.node()} \n"
+                         message=f"Started Downloading Books \n"
                                  f"logfile: {LOG_FILENAME}\n out_dir: {config['out_folder']} \n"
                                  f"odm_list:{web_odm_list}")
             good_odm_list, bad_odm_list = process(web_odm_list)
@@ -271,40 +268,5 @@ def web_run():
                          metrics={'count': len(web_odm_list), 'error_count': error_count})
 
 
-def main_run():
-    # AutoBooks
-    logger.info("Started AutoBooks V.{} By:IvyB", version)
-    # Try to change to ODM folder
-    try:
-        os.chdir(config["odm_folder"])
-    except FileNotFoundError:
-        logger.critical("The provided .odm dir was not found, exiting")
-        sys.exit(1)
-    else:
-        odm_list = glob.glob("*.odm")
-        monitor.ping(state='run',
-                     message=f"AutoBooks by IvyB v.{version} \n"
-                             f"logfile: {LOG_FILENAME}\n odm_dir: {config['odm_folder']} \n "
-                             f"out_dir: {config['out_folder']} \n"
-                             f"odm_list:{odm_list}")
-
-        # Check if any .odm files exist in odm_dir
-        if len(odm_list) == 0:
-            monitor.ping(state='fail', message='Error: No .odm files found, exiting',
-                         metrics={'error_count': error_count})
-            logger.critical("No .odm files found, exiting")
-            sys.exit(1)
-        else:
-            good_odm_list, bad_odm_list = process(odm_list)
-            # Cleanup files
-            m4blist = glob.glob("*.m4b")
-            cleanup(m4blist, good_odm_list, config["odm_folder"])
-            # Send complete event and log to Cronitor
-            log_str = process_logfile(LOG_FILENAME, terms=(
-                "Downloading", "expired", "generating", "merged", "saved"))
-            monitor.ping(state='complete', message=log_str,
-                         metrics={'count': len(odm_list), 'error_count': error_count})
-
-
 if __name__ == "__main__" and config["test_run"] == "True":
-    main_run()
+    run()
