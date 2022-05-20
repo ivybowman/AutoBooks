@@ -19,7 +19,7 @@ from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfil
     query_login_form
 
 # Set Vars
-version = "0.5"  # Version number of script
+version = "0.6"  # Version number of script
 error_count = 0
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
@@ -212,12 +212,7 @@ def run():
             logger.info("Begin Processing library: {}", lib_conf['library_name'])
             sleep(0.5)
             base_url, ils_name, session = login(lib_conf)
-            '''
-            base_url, ils_name, session = login(lib_conf['library_subdomain'],
-                                                lib_conf['card_number'],
-                                                lib_conf['card_pin'],
-                                                lib_conf['library_select'], )
-                                                '''
+
             if not base_url.endswith('/'):
                 base_url = base_url + '/'
             loans = session.get(f'{base_url}account/loans')
