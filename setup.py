@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '0.4'
+VERSION = '0.6'
 DESCRIPTION = 'Python tool to automate processing a batch of OverDrive audiobooks.'
 LONG_DESCRIPTION = 'Python tool to automate processing a batch of OverDrive audiobooks.'
 
@@ -16,8 +16,7 @@ setup(
     packages=["autobooks"],
     entry_points={
         "console_scripts": [
-            "autobooks = autobooks.AutoBooks:main_run",
-            "autobooks-web = autobooks.AutoBooks:web_run",
+            "autobooks = autobooks.AutoBooks:run",
             "autobooks-discord = autobooks.AutoBooksDiscord:run"
         ]
     },
