@@ -4,7 +4,7 @@ Python tools to automate processing a batch of OverDrive audiobooks.
 
 # Important Disclaimer
 
-The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, in order for use with your prefered audiobook player during the loan period.
+The intention of this script is solely to automate downloading and converting of loaned OverDrive audiobooks, in order for use with your preferred audiobook player during the loan period.
 
 ## Windows Setup Guide
 
@@ -22,7 +22,7 @@ Open a terminal window then follow the steps below. Works with both M1 and Intel
 1. Run python3 in your terminal and follow prompts to install the xcode command line tools.
 2. Install Homebrew. Be sure to follow instructions at the end for adding it to path.  
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-3. Install prerequisites. On trying to use these tools you might see an unideditifed developer pop up, this is normal just open the folder and ctrl+click or right click on the file and click open.
+3. Install prerequisites. On trying to use these tools you might see an unidentified developer pop up, this is normal just open the folder and ctrl+click or right-click on the file and click open.
 `brew install ffmpeg`
 
 ## Debian/Ubuntu Linux Setup Guide
@@ -40,7 +40,7 @@ Open a terminal window then follow the steps below.
 To install from the latest source run the following command.  
 `pip3 install git+https://git@github.com/ivybowman/autobooks.git --upgrade --force-reinstall`
 To install from a specific version run the following command.
-`pip3 install git+https://git@github.com/ivybowman/autobooks.git@v0.4-beta --upgrade`
+`pip3 install git+https://git@github.com/ivybowman/autobooks.git@<VERSION> --upgrade`
 To uninstall AutoBooks run the following command.  
 `pip3 uninstall autobooks`
 

@@ -18,7 +18,7 @@ from loguru import logger
 from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfile, parse_form, craft_booklist
 
 # Set Vars
-version = "0.4"  # Version number of script
+version = "1.0"  # Version number of script
 error_count = 0
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
@@ -126,7 +126,7 @@ def web_login(subdomain, card_num, pin, select):
     login_session = requests.Session()
     logger.info("Logging into: {}", subdomain)
     box = login_session.get(f'https://{subdomain}.overdrive.com/account/ozone/sign-in?forward=%2F')
-    logger.success('Fetched login page. Status Code: {}', box.status_code)
+    # logger.success('Fetched login page. Status Code: {}', box.status_code)
     form_list = parse_form(box, "loginForms")['forms']
     x = 0
     if len(form_list) != 1:

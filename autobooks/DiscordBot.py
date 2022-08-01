@@ -7,7 +7,7 @@ import discord
 import pandas as pd
 from discord.ext import commands
 
-from autobooks.AutoBooks import web_run, main_run, version, script_dir, config, csv_path, LOG_FILENAME, logger
+from autobooks.AutoBooks import web_run, version, script_dir, config, csv_path, LOG_FILENAME, logger
 
 # Bot Settings
 token = config["discord_bot_token"]
@@ -45,16 +45,6 @@ async def web(ctx):
     await ctx.channel.send(file=discord.File(files2[0]))
 
 
-@bot.command(name='main')
-async def hello(ctx):
-    embed_var = discord.Embed(title="Title", description="Desc", color=0xFFAFCC)
-    embed_var.add_field(name="Field1", value="hi", inline=False)
-    embed_var.add_field(name="Field2", value="hi2", inline=False)
-
-    await ctx.channel.send(embed=embed_var)
-    main_run()
-
-
 @bot.command(name='log')
 async def hello(ctx):
     files = glob.glob(os.path.join(script_dir, "log", "*.log"))
@@ -70,7 +60,7 @@ async def hello(ctx):
         df = pd.read_csv(csv_path, sep=",")
         embed_var = discord.Embed(title="Autobooks Known Books",
                                   description=df['book_title'].to_string(index=False), color=0xFFAFCC)
-        embed_var.set_footer(text="OS: " + platform.platform() + " Host: " + os.uname())
+        embed_var.set_footer(text="OS: " + platform.platform() + " Host: " + platform.node())
         await ctx.channel.send(embed=embed_var)
     except FileNotFoundError:
         await ctx.channel.send("Known Books CSV not found.")
