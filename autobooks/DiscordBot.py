@@ -60,7 +60,7 @@ async def hello(ctx):
         df = pd.read_csv(csv_path, sep=",")
         embed_var = discord.Embed(title="Autobooks Known Books",
                                   description=df['book_title'].to_string(index=False), color=0xFFAFCC)
-        embed_var.set_footer(text="OS: " + platform.platform() + " Host: " + os.uname())
+        embed_var.set_footer(text="OS: " + platform.platform() + " Host: " + platform.node())
         await ctx.channel.send(embed=embed_var)
     except FileNotFoundError:
         await ctx.channel.send("Known Books CSV not found.")
