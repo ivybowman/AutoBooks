@@ -29,8 +29,7 @@ for personal use with your preferred audiobook player during the loan period.
 
 # Usage
 
-- AutoBooks DL/Fulfill: `autobooks`
-- AutoBooks Web: `autobooks-web`
+- AutoBooks: `autobooks`
 - AutoBooks Discord bot: `autobooks-discord`
 
 # Credits & Tools Used

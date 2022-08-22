@@ -19,7 +19,7 @@ from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfil
     query_login_form
 
 # Set Vars
-version = "0.6"  # Version number of script
+version = "1.0"  # Version number of script
 error_count = 0
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
@@ -51,7 +51,7 @@ cronitor_log_format = "[{name}:{function}] {level}: {message}\n{exception}"
 file_log_format = "{time:HH:mm:ss A} [{name}:{function}] {level}: {extra[scrubbed]}\n{exception}"
 redacting_formatter = RedactingFormatter(patterns=patterns, source_fmt=file_log_format)
 logger.configure(handlers=[
-    {'sink': sys.stderr, "format": console_log_format},
+    {'sink': sys.stderr, "format": console_log_format, 'level': 'DEBUG'},
     {'sink': LOG_FILENAME,
      "format": redacting_formatter.format, "retention": 10},
 ])
@@ -71,7 +71,7 @@ cronitor.api_key = config['cronitor_apikey']
 monitor = cronitor.Monitor(config['cronitor_monitor'])
 
 
-# Function to process the books.
+# Function to process the odm files into books.
 def process(odm_list):
     global error_count
     good_odm_list = []
@@ -123,12 +123,14 @@ def cleanup(m4b_list, odm_list, odm_folder):
             logger.info("Moved file pair {} to source files", x)
 
 
+# Function to authenticate with Overdrive
 def login(library):
     login_session = requests.Session()
     logger.info("Logging into: {}", library["subdomain"])
     box = login_session.get(f'https://{library["subdomain"]}.overdrive.com/account/ozone/sign-in?forward=%2F')
     # logger.success('Fetched login page. Status Code: {}', box.status_code)
     form_list = parse_form(box, "loginForms")['forms']
+    print(form_list)
     login_form = query_login_form(form_list, library['select_box'])
     sleep(0.5)
     auth = login_session.post(f'https://{library["subdomain"]}.overdrive.com/account/signInOzone',
@@ -142,7 +144,10 @@ def login(library):
                               })
     logger.success("Logged into: {} Status Code: {} ", library["subdomain"], auth.status_code)
     # print("AUTH URL: ", auth.url)
-    return auth.url, login_form['ilsName'], login_session
+    base_url = auth.url
+    if not base_url.endswith('/'):
+        base_url = base_url + '/'
+    return base_url, login_form['ilsName'], login_session
 
 
 # Function to download loans from OverDrive page
@@ -209,12 +214,10 @@ def run():
         # For every library, open site, attempt sign in, and attempt download.
         for i in range(0, library_count):
             lib_conf = parser['library_' + str(i)]
-            logger.info("Begin Processing library: {}", lib_conf['library_name'])
+            logger.info("Begin Processing library: {}", lib_conf['name'])
             sleep(0.5)
             base_url, ils_name, session = login(lib_conf)
 
-            if not base_url.endswith('/'):
-                base_url = base_url + '/'
             loans = session.get(f'{base_url}account/loans')
             sleep(0.5)
             if loans.status_code == 200:
@@ -233,7 +236,7 @@ def run():
                     else:
                         df_out.to_csv(csv_path, mode='w', index=False, header=True)
                 else:
-                    logger.warning("Can't find books skipped library: {}", lib_conf['library_name'])
+                    logger.warning("Can't find books skipped library: {}", lib_conf['name'])
                     error_count += 1
             session.close()
         logger.info("AutoBooksWeb Complete")

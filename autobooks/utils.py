@@ -82,4 +82,4 @@ def query_login_form(form_list, select):
         for form, index in form_list:
             if select in form['displayName']:
                 x = form_list.index(form)
-                return form_list[x]
+    return form_list[x]
