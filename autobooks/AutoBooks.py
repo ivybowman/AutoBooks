@@ -130,7 +130,6 @@ def login(library):
     box = login_session.get(f'https://{library["subdomain"]}.overdrive.com/account/ozone/sign-in?forward=%2F')
     # logger.success('Fetched login page. Status Code: {}', box.status_code)
     form_list = parse_form(box, "loginForms")['forms']
-    print(form_list)
     login_form = query_login_form(form_list, library['select_box'])
     sleep(0.5)
     auth = login_session.post(f'https://{library["subdomain"]}.overdrive.com/account/signInOzone',
@@ -158,7 +157,7 @@ def download(df, session, base_url, name, book_list):
     odm_list = []
     book_count = 0
     if len(book_list) == 0:
-        logger.warning("Can't find books skipped library: {}", name)
+        logger.info("Can't find any new audiobooks skipped library: {}", name)
         error_count += 1
         return df_out
     for book in book_list:
@@ -176,7 +175,7 @@ def download(df, session, base_url, name, book_list):
                     f.write(odm.content)
                 odm_list.append(odm_filename)
                 book_count += 1
-                print(odm_filename)
+                # print(odm_filename)
                 # Save book info to dataframe
                 df_book = pd.DataFrame([[name, book['id'], book['title'], odm_filename]],
                                        columns=['ils_name', 'book_id', 'book_title', 'book_odm'])
@@ -239,7 +238,7 @@ def run():
                     logger.warning("Can't find books skipped library: {}", lib_conf['name'])
                     error_count += 1
             session.close()
-        logger.info("AutoBooksWeb Complete")
+        logger.info("Download Complete")
 
         # Process log file for Cronitor.
         web_log = process_logfile(LOG_FILENAME, terms=("web", "ERROR"))
@@ -251,7 +250,7 @@ def run():
         if len(web_odm_list) != 0:
             logger.info("Started Downloading Books")
             monitor.ping(state='run',
-                         message=f"Started Downloading Books \n"
+                         message=f"Started Processing Books \n"
                                  f"logfile: {LOG_FILENAME}\n out_dir: {config['out_folder']} \n"
                                  f"odm_list:{web_odm_list}")
             good_odm_list, bad_odm_list = process(web_odm_list)
