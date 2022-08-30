@@ -79,7 +79,7 @@ def craft_booklist(loans_page):
 def query_login_form(form_list, select):
     x = 0
     if len(form_list) != 1:
-        for form, index in form_list:
+        for index, form in enumerate(form_list):
             if select in form['displayName']:
-                x = form_list.index(form)
+                x = index
     return form_list[x]
