@@ -19,7 +19,7 @@ from autobooks.utils import InterceptHandler, RedactingFormatter, process_logfil
     query_login_form
 
 # Set Vars
-version = "1.0"  # Version number of script
+version = "1.2"  # Version number of script
 error_count = 0
 script_dir = os.path.join(Path.home(), "AutoBooks")
 csv_path = os.path.join(script_dir, 'web_known_files.csv')
@@ -34,10 +34,10 @@ else:
     folders = ['log', 'downloads', 'source_backup']
     for folder in folders:
         os.mkdir(os.path.join(script_dir, folder))
-    with open(os.path.join(script_dir, "autobooks.conf"), mode='wb') as local_file:
+    with open(os.path.join(script_dir, "autobooks.ini"), mode='wb') as local_file:
         local_file.write(main_conf.content)
     print("Finished setup please configure settings in file: ",
-          os.path.join(script_dir, "autobooks.conf"))
+          os.path.join(script_dir, "autobooks.ini"))
     sys.exit(1)
 
 # Logging Config
